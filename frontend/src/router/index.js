@@ -16,7 +16,6 @@ const routes = [
     children: [
       { path: '', component: () => import('../views/Home.vue') },
       { path: 'record', component: () => import('../views/HealthRecord.vue') },
-      { path: 'weight', component: () => import('../views/WeightTrack.vue') },
       { path: 'ai-plan', component: () => import('../views/AiPlan.vue') },
       { path: 'history', component: () => import('../views/History.vue') },
       { path: 'chart', component: () => import('../views/Chart.vue') },

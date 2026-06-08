@@ -1,11 +1,13 @@
 package org.example.web02.controller;
 
 import org.example.web02.dto.response.ApiResponse;
+import org.example.web02.entity.DailyCheckin;
 import org.example.web02.service.CheckinService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -42,5 +44,12 @@ public class CheckinController {
         result.put("weekDays", checkinService.getWeekCheckinDays(userId));
         
         return ApiResponse.success(result);
+    }
+
+    @GetMapping("/history")
+    public ApiResponse<List<DailyCheckin>> getCheckinHistory(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        List<DailyCheckin> history = checkinService.getCheckinHistory(userId);
+        return ApiResponse.success(history);
     }
 }

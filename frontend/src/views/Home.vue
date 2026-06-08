@@ -57,7 +57,7 @@
           </template>
           <div class="quick-actions">
             <el-button type="primary" @click="$router.push('/record')">添加健康记录</el-button>
-            <el-button type="success" @click="$router.push('/weight')">记录体重</el-button>
+            <el-button type="success" @click="$router.push('/history')">记录体重</el-button>
             <el-button type="warning" @click="$router.push('/ai-plan')">获取AI建议</el-button>
             <el-button 
               :type="checkinStatus.checkedInToday ? 'default' : 'danger'" 

@@ -31,7 +31,7 @@
         >
           <el-menu-item index="/">首页工作台</el-menu-item>
           <el-menu-item index="/record">健康档案</el-menu-item>
-          <el-menu-item index="/weight">体重追踪</el-menu-item>
+          
           <el-menu-item index="/ai-plan">AI健康计划</el-menu-item>
           <el-menu-item index="/history">历史记录</el-menu-item>
           <el-menu-item index="/chart">数据可视化</el-menu-item>

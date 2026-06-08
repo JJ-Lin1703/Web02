@@ -89,3 +89,41 @@ export const checkHealthRecordExists = () => {
     method: 'get'
   })
 }
+
+export const getCheckinHistory = () => {
+  return request({
+    url: '/checkin/history',
+    method: 'get'
+  })
+}
+
+export const getWeightHistory = (params) => {
+  return request({
+    url: '/weight-record/history',
+    method: 'get',
+    params
+  })
+}
+
+export const recordWeight = (data) => {
+  return request({
+    url: '/weight-record',
+    method: 'post',
+    data
+  })
+}
+
+export const deleteWeightRecord = (id) => {
+  return request({
+    url: `/weight-record/${id}`,
+    method: 'delete'
+  })
+}
+
+export const updateWeightRecord = (id, data) => {
+  return request({
+    url: `/weight-record/${id}`,
+    method: 'put',
+    data
+  })
+}

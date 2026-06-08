@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.web02.mapper.WeightRecordMapper">
+
+    <resultMap id="WeightRecordResultMap" type="org.example.web02.entity.WeightRecord">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="weight" property="weight"/>
+        <result column="record_date" property="recordDate"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_deleted" property="isDeleted"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO weight_record (user_id, weight, record_date, remark, create_time, update_time, is_deleted)
+        VALUES (#{userId}, #{weight}, #{recordDate}, #{remark}, #{createTime}, #{updateTime}, 0)
+    </insert>
+
+    <select id="findByUserId" resultMap="WeightRecordResultMap">
+        SELECT * FROM weight_record WHERE user_id = #{userId} AND is_deleted = 0 ORDER BY record_date DESC
+    </select>
+
+    <select id="findByUserIdWithFilter" resultMap="WeightRecordResultMap">
+        SELECT * FROM weight_record
+        <where>
+            user_id = #{userId} AND is_deleted = 0
+            <if test="startDate != null">
+                AND record_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND record_date &lt;= #{endDate}
+            </if>
+        </where>
+        <choose>
+            <when test="sortBy == 'weight'">ORDER BY weight ASC</when>
+            <otherwise>ORDER BY record_date ASC</otherwise>
+        </choose>
+    </select>
+
+    <select id="findById" resultMap="WeightRecordResultMap">
+        SELECT * FROM weight_record WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="findByUserIdAndDate" resultMap="WeightRecordResultMap">
+        SELECT * FROM weight_record WHERE user_id = #{userId} AND record_date = #{recordDate} AND is_deleted = 0
+    </select>
+
+    <update id="deleteById">
+        UPDATE weight_record SET is_deleted = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="update">
+        UPDATE weight_record SET weight = #{weight}, update_time = NOW() WHERE id = #{id}
+    </update>
+</mapper>
