@@ -31,3 +31,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Maven Repository ###
+.mvn/repository/
+
+### Logs ###
+*.log
+
+### OS Files ###
+Thumbs.db
+.DS_Store
+desktop.ini
