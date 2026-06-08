@@ -1,0 +1,1 @@
+import{f as e,g as t,l as n,u as r}from"./index-CCb1-gKi.js";var i={},a={class:`page`};function o(n,i){return t(),e(`div`,a,[...i[0]||=[r(`h1`,null,`404`,-1),r(`p`,null,`页面不存在`,-1)]])}var s=n(i,[[`render`,o],[`__scopeId`,`data-v-654123b0`]]);export{s as default};
