@@ -32,6 +32,9 @@ app:
     username: admin
     password: admin123
 
+dashscope:
+  api-key: ${DASHSCOPE_API_KEY:}
+
 logging:
   level:
     org.example.web02: DEBUG

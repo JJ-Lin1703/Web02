@@ -89,3 +89,77 @@ export const checkHealthRecordExists = () => {
     method: 'get'
   })
 }
+
+export const getCheckinHistory = () => {
+  return request({
+    url: '/checkin/history',
+    method: 'get'
+  })
+}
+
+export const getWeightHistory = (params) => {
+  return request({
+    url: '/weight-record/history',
+    method: 'get',
+    params
+  })
+}
+
+export const recordWeight = (data) => {
+  return request({
+    url: '/weight-record',
+    method: 'post',
+    data
+  })
+}
+
+export const deleteWeightRecord = (id) => {
+  return request({
+    url: `/weight-record/${id}`,
+    method: 'delete'
+  })
+}
+
+export const updateWeightRecord = (id, data) => {
+  return request({
+    url: `/weight-record/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+export const getWeightTrend = () => {
+  return request({
+    url: '/weight-record/trend',
+    method: 'get'
+  })
+}
+
+export const generateAiPlan = () => {
+  return request({
+    url: '/ai-plan/generate',
+    method: 'post',
+    timeout: 60000
+  })
+}
+
+export const getAiPlanHistory = () => {
+  return request({
+    url: '/ai-plan/history',
+    method: 'get'
+  })
+}
+
+export const getLatestAiPlan = () => {
+  return request({
+    url: '/ai-plan/latest',
+    method: 'get'
+  })
+}
+
+export const deleteAiPlan = (id) => {
+  return request({
+    url: `/ai-plan/${id}`,
+    method: 'delete'
+  })
+}
