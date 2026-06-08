@@ -27,6 +27,11 @@ jwt:
   secret: smart-health-helper-jwt-secret-key-2024
   expiration: 604800000
 
+app:
+  admin:
+    username: admin
+    password: admin123
+
 logging:
   level:
     org.example.web02: DEBUG
