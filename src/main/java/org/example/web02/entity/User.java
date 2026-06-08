@@ -13,6 +13,7 @@ public class User {
     private Integer role;
     private Date lockUntil;
     private Integer loginFailCount;
+    private Integer exerciseDays;
     private Date createTime;
     private Date updateTime;
     private Integer isDeleted;

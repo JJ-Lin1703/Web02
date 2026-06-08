@@ -45,3 +45,47 @@ export const resetUserPassword = (userId, data) => {
     data
   })
 }
+
+export const getCheckinStatus = () => {
+  return request({
+    url: '/checkin/status',
+    method: 'get'
+  })
+}
+
+export const dailyCheckin = () => {
+  return request({
+    url: '/checkin/daily',
+    method: 'post'
+  })
+}
+
+export const getHealthRecord = () => {
+  return request({
+    url: '/health-record',
+    method: 'get'
+  })
+}
+
+export const createHealthRecord = (data) => {
+  return request({
+    url: '/health-record',
+    method: 'post',
+    data
+  })
+}
+
+export const updateHealthRecord = (data) => {
+  return request({
+    url: '/health-record',
+    method: 'put',
+    data
+  })
+}
+
+export const checkHealthRecordExists = () => {
+  return request({
+    url: '/health-record/exists',
+    method: 'get'
+  })
+}

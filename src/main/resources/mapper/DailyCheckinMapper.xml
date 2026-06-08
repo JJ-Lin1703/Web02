@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.web02.mapper.DailyCheckinMapper">
+
+    <resultMap id="DailyCheckinResultMap" type="org.example.web02.entity.DailyCheckin">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="checkin_date" property="checkinDate"/>
+        <result column="checkin_time" property="checkinTime"/>
+        <result column="continuous_days" property="continuousDays"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO daily_checkin (user_id, checkin_date, checkin_time, continuous_days, create_time)
+        VALUES (#{userId}, #{checkinDate}, #{checkinTime}, #{continuousDays}, #{createTime})
+    </insert>
+
+    <select id="findByUserIdAndDate" resultMap="DailyCheckinResultMap">
+        SELECT * FROM daily_checkin WHERE user_id = #{userId} AND checkin_date = #{checkinDate}
+    </select>
+
+    <select id="countByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM daily_checkin WHERE user_id = #{userId}
+    </select>
+
+    <select id="countByUserIdAndDateRange" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM daily_checkin 
+        WHERE user_id = #{userId} AND checkin_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <select id="findByUserId" resultMap="DailyCheckinResultMap">
+        SELECT * FROM daily_checkin WHERE user_id = #{userId} ORDER BY checkin_date DESC
+    </select>
+
+    <select id="getContinuousDays" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM (
+            SELECT * FROM daily_checkin 
+            WHERE user_id = #{userId} 
+            ORDER BY checkin_date DESC
+            LIMIT 365
+        ) t
+        WHERE checkin_date >= DATE_SUB(CURDATE(), INTERVAL (SELECT COUNT(*) FROM (SELECT * FROM daily_checkin WHERE user_id = #{userId} ORDER BY checkin_date DESC LIMIT 365) AS temp) - 1 DAY)
+    </select>
+</mapper>

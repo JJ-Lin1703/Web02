@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.web02.mapper.UserHealthMapper">
+
+    <resultMap id="UserHealthResultMap" type="org.example.web02.entity.UserHealth">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="age" property="age"/>
+        <result column="gender" property="gender"/>
+        <result column="height" property="height"/>
+        <result column="weight" property="weight"/>
+        <result column="activity_level" property="activityLevel"/>
+        <result column="diet_hobby" property="dietHobby"/>
+        <result column="health_target" property="healthTarget"/>
+        <result column="allergy" property="allergy"/>
+        <result column="medical_history" property="medicalHistory"/>
+        <result column="bmr" property="bmr"/>
+        <result column="tdee" property="tdee"/>
+        <result column="bmi" property="bmi"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="is_deleted" property="isDeleted"/>
+    </resultMap>
+
+    <select id="findById" resultMap="UserHealthResultMap">
+        SELECT * FROM user_health WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="findByUserId" resultMap="UserHealthResultMap">
+        SELECT * FROM user_health WHERE user_id = #{userId} AND is_deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_health (user_id, age, gender, height, weight, activity_level, diet_hobby, health_target, allergy, medical_history, bmr, tdee, bmi, create_time, update_time, is_deleted)
+        VALUES (#{userId}, #{age}, #{gender}, #{height}, #{weight}, #{activityLevel}, #{dietHobby}, #{healthTarget}, #{allergy}, #{medicalHistory}, #{bmr}, #{tdee}, #{bmi}, #{createTime}, #{updateTime}, #{isDeleted})
+    </insert>
+
+    <update id="update">
+        UPDATE user_health
+        SET age = #{age},
+            gender = #{gender},
+            height = #{height},
+            weight = #{weight},
+            activity_level = #{activityLevel},
+            diet_hobby = #{dietHobby},
+            health_target = #{healthTarget},
+            allergy = #{allergy},
+            medical_history = #{medicalHistory},
+            bmr = #{bmr},
+            tdee = #{tdee},
+            bmi = #{bmi},
+            update_time = #{updateTime}
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE user_health SET is_deleted = 1 WHERE id = #{id}
+    </update>
+
+    <select id="existsByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM user_health WHERE user_id = #{userId} AND is_deleted = 0
+    </select>
+</mapper>
