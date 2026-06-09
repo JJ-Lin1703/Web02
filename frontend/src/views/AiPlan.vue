@@ -5,7 +5,10 @@
         <el-card>
           <template #header>
             <div class="card-header">
-              <span class="card-title">AI健康计划</span>
+              <div class="card-header-left">
+                <Vue3Lottie :animationLink="'/robot.json'" :width="48" :height="48" />
+                <span class="card-title">AI健康计划</span>
+              </div>
               <el-button type="primary" @click="handleGeneratePlan" :loading="generating">
                 生成新计划
               </el-button>
@@ -86,6 +89,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Loading, Bowl, TrendCharts } from '@element-plus/icons-vue'
+import { Vue3Lottie } from 'vue3-lottie'
 import { generateAiPlan, getLatestAiPlan } from '@/api/user'
 
 const activeTab = ref('plan')
@@ -172,6 +176,12 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .card-title {

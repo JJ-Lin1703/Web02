@@ -29,7 +29,7 @@
     </el-header>
 
     <div class="content-wrapper">
-      <el-aside width="240px" class="aside">
+      <el-aside width="200px" class="aside">
         <el-menu
           :default-active="$route.path"
           class="menu"
@@ -206,9 +206,9 @@ import { changePassword, checkHealthRecordExists, createHealthRecord } from '@/a
 const router = useRouter()
 const userStore = useUserStore()
 
-const menuBg = computed(() => '#1f2937')
-const menuText = computed(() => '#e5e7eb')
-const menuActiveText = computed(() => '#409eff')
+const menuBg = computed(() => '#26B5B5')
+const menuText = computed(() => 'rgba(255,255,255,0.9)')
+const menuActiveText = computed(() => '#26B5B5')
 
 const passwordDialogVisible = ref(false)
 const passwordFormRef = ref(null)
@@ -373,18 +373,21 @@ onMounted(() => {
 
 <style scoped>
 .header {
-  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 30px;
-  height: 65px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  padding: 0 28px;
+  height: 60px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   z-index: 100;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  border-radius: 20px;
 }
 
 .logo {
@@ -394,14 +397,14 @@ onMounted(() => {
 }
 
 .logo-icon {
-  color: #409eff;
+  color: #5b9bd5;
 }
 
 .logo-text {
   font-size: 20px;
   font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 1px;
+  color: #2c3e50;
+  letter-spacing: 0.5px;
 }
 
 .user-info {
@@ -410,13 +413,13 @@ onMounted(() => {
 }
 
 .user-icon {
-  color: #9ca3af;
+  color: #94a3b8;
 }
 
 .username {
   margin: 0 8px;
   font-size: 15px;
-  color: #e5e7eb;
+  color: #475569;
 }
 
 .el-dropdown-link {
@@ -424,67 +427,84 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  color: #9ca3af;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-  }
+  color: #64748b;
+  padding: 8px 16px;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+}
+
+.el-dropdown-link:hover {
+  background: rgba(91, 155, 213, 0.08);
+  color: #5b9bd5;
 }
 
 .content-wrapper {
   display: flex;
-  padding-top: 65px;
+  padding-top: 84px;
   min-height: 100vh;
 }
 
 .aside {
-  background: #1f2937;
-  border-right: 1px solid #374151;
+  background: #26B5B5;
+  border-right: none;
   position: fixed;
-  top: 65px;
-  left: 0;
-  width: 240px;
-  height: calc(100vh - 65px);
+  top: 84px;
+  left: 12px;
+  width: 200px;
+  height: calc(100vh - 96px);
   overflow-y: auto;
   z-index: 99;
+  border-radius: 28px;
+  box-shadow: 0 8px 24px rgba(38, 181, 181, 0.18);
 }
 
 .menu {
   border-right: none;
   height: 100%;
-  padding: 15px 0;
+  padding: 16px 10px;
 }
 
 .menu :deep(.el-menu-item) {
-  margin: 4px 12px;
-  border-radius: 10px;
-  padding: 14px 20px;
-  font-size: 15px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(64, 158, 255, 0.15);
-  }
-  
-  &.is-active {
-    background: linear-gradient(135deg, rgba(64, 158, 255, 0.2) 0%, rgba(64, 158, 255, 0.1) 100%);
-    border-left: 3px solid #409eff;
-  }
+  margin: 6px 16px;
+  border-radius: 30px;
+  padding: 16px 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.25s ease;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: auto;
+  line-height: 1.3;
+}
+
+.menu :deep(.el-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.menu :deep(.el-menu-item.is-active) {
+  background: #ffffff;
+  color: #26B5B5;
+  font-weight: 600;
+  border-radius: 30px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
 .menu :deep(.el-menu-item span) {
-  margin-left: 12px;
+  margin-left: 0;
 }
 
 .main {
-  background: var(--bg);
-  padding: 24px;
-  margin-left: 240px;
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  padding: 28px;
+  margin-left: 224px;
   flex: 1;
+  min-height: calc(100vh - 84px);
 }
 
 .modal-overlay {

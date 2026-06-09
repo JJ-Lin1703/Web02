@@ -1,0 +1,1 @@
+import{$ as e,B as t,K as n,U as r}from"./index-K0QYdUd2.js";var i={},a={class:`page`};function o(t,i){return e(),n(`div`,a,[...i[0]||=[r(`h1`,null,`404`,-1),r(`p`,null,`页面不存在`,-1)]])}var s=t(i,[[`render`,o],[`__scopeId`,`data-v-654123b0`]]);export{s as default};
