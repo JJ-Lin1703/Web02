@@ -166,6 +166,44 @@ export const deleteAiPlan = (id) => {
   })
 }
 
+export const saveClockRecord = (data) => {
+  return request({
+    url: '/clock-record/save',
+    method: 'post',
+    data
+  })
+}
+
+export const getTodayClockRecord = (planId) => {
+  return request({
+    url: '/clock-record/today',
+    method: 'get',
+    params: { planId }
+  })
+}
+
+export const getWeeklyStats = () => {
+  return request({
+    url: '/clock-record/week',
+    method: 'get'
+  })
+}
+
+export const getClockRecordsByRange = (startDate, endDate) => {
+  return request({
+    url: '/clock-record/range',
+    method: 'get',
+    params: { startDate, endDate }
+  })
+}
+
+export const deleteClockRecord = (id) => {
+  return request({
+    url: `/clock-record/${id}`,
+    method: 'delete'
+  })
+}
+
 export const exportAiPlanPdf = async (planId = null) => {
   const userStore = useUserStore()
   const url = planId ? `/api/ai-plan/export/${planId}` : '/api/ai-plan/export/latest'

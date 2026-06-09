@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.web02.mapper.ClockRecordMapper">
+
+    <resultMap id="ClockRecordResultMap" type="org.example.web02.entity.ClockRecord">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="plan_id" property="planId"/>
+        <result column="record_date" property="recordDate"/>
+        <result column="finish_item" property="finishItem"/>
+        <result column="total_item" property="totalItem"/>
+        <result column="unfinish_reason" property="unfinishReason"/>
+        <result column="finish_rate" property="finishRate"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_deleted" property="isDeleted"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO clock_record (user_id, plan_id, record_date, finish_item, total_item, 
+                                  unfinish_reason, finish_rate, create_time, update_time, is_deleted)
+        VALUES (#{userId}, #{planId}, #{recordDate}, #{finishItem}, #{totalItem}, 
+                #{unfinishReason}, #{finishRate}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="update">
+        UPDATE clock_record 
+        SET finish_item = #{finishItem}, 
+            total_item = #{totalItem}, 
+            unfinish_reason = #{unfinishReason}, 
+            finish_rate = #{finishRate}, 
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="findById" resultMap="ClockRecordResultMap">
+        SELECT * FROM clock_record WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="findByUserPlanDate" resultMap="ClockRecordResultMap">
+        SELECT * FROM clock_record 
+        WHERE user_id = #{userId} AND plan_id = #{planId} AND record_date = #{recordDate} AND is_deleted = 0
+    </select>
+
+    <select id="findByUserId" resultMap="ClockRecordResultMap">
+        SELECT * FROM clock_record WHERE user_id = #{userId} AND is_deleted = 0 ORDER BY record_date DESC
+    </select>
+
+    <select id="findByUserIdAndDateRange" resultMap="ClockRecordResultMap">
+        SELECT * FROM clock_record 
+        WHERE user_id = #{userId} AND record_date BETWEEN #{startDate} AND #{endDate} AND is_deleted = 0
+        ORDER BY record_date ASC
+    </select>
+
+    <select id="findByPlanId" resultMap="ClockRecordResultMap">
+        SELECT * FROM clock_record WHERE plan_id = #{planId} AND is_deleted = 0 ORDER BY record_date DESC
+    </select>
+
+    <update id="deleteById">
+        UPDATE clock_record SET is_deleted = 1 WHERE id = #{id}
+    </update>
+
+    <select id="countByUserIdAndDateRange" resultType="int">
+        SELECT COUNT(*) FROM clock_record 
+        WHERE user_id = #{userId} AND record_date BETWEEN #{startDate} AND #{endDate} AND is_deleted = 0
+    </select>
+
+    <select id="sumCompletedItems" resultType="int">
+        SELECT SUM(JSON_LENGTH(finish_item)) FROM clock_record 
+        WHERE user_id = #{userId} AND record_date BETWEEN #{startDate} AND #{endDate} AND is_deleted = 0
+    </select>
+
+    <select id="sumTotalItems" resultType="int">
+        SELECT SUM(JSON_LENGTH(total_item)) FROM clock_record 
+        WHERE user_id = #{userId} AND record_date BETWEEN #{startDate} AND #{endDate} AND is_deleted = 0
+    </select>
+</mapper>

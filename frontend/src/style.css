@@ -34,7 +34,7 @@
   --sans: 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --heading: 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
-  font: 16px/160% var(--sans);
+  font: 18px/160% var(--sans);
   letter-spacing: 0.2px;
   color: var(--text);
   background: var(--bg);
@@ -46,7 +46,7 @@
 
 @media (max-width: 1024px) {
   :root {
-    font-size: 15px;
+    font-size: 17px;
   }
 }
 
