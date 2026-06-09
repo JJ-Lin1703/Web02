@@ -2,8 +2,8 @@
   --text: #4a4a4a;
   --text-h: #2c3e50;
   --text-light: #7f8c8d;
-  --bg: #FAF8F5;
-  --bg-gradient: linear-gradient(160deg, #FAF8F5 0%, #F5F0E8 40%, #FAF8F5 100%);
+  --bg: #edf5f5;
+  --bg-gradient: linear-gradient(160deg, #eef6f6 0%, #e8f2f2 40%, #edf5f5 100%);
   --bg-card: #ffffff;
   --border: #e8e4df;
   --border-light: #f0ece6;
@@ -137,6 +137,47 @@ h4 {
 p {
   margin: 0 0 12px;
   line-height: 1.7;
+}
+
+/* ===== 全局淡入动画 ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.el-card {
+  animation: fadeInUp 0.45s ease-out both;
+}
+
+.el-card:nth-child(1) { animation-delay: 0s; }
+.el-card:nth-child(2) { animation-delay: 0.06s; }
+.el-card:nth-child(3) { animation-delay: 0.12s; }
+.el-card:nth-child(4) { animation-delay: 0.18s; }
+.el-card:nth-child(5) { animation-delay: 0.24s; }
+
+.el-row {
+  animation: fadeInUp 0.45s ease-out both;
+}
+
+.el-table,
+.el-tabs__content,
+.page-container > :first-child {
+  animation: fadeInUp 0.4s ease-out both;
+}
+
+/* 交互过渡 */
+.el-button:not(.el-menu .el-menu-item *) {
+  transition: all 0.25s ease;
+}
+
+.el-input__wrapper {
+  transition: all 0.25s ease;
 }
 
 code,

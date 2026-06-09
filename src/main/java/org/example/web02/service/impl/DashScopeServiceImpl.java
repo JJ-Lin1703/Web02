@@ -3,11 +3,13 @@ package org.example.web02.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.example.web02.entity.KnowledgeBase;
 import org.example.web02.entity.UserHealth;
 import org.example.web02.entity.WeightRecord;
 import org.example.web02.mapper.UserHealthMapper;
 import org.example.web02.mapper.WeightRecordMapper;
 import org.example.web02.service.DashScopeService;
+import org.example.web02.service.KnowledgeBaseService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,7 @@ public class DashScopeServiceImpl implements DashScopeService {
 
     private final UserHealthMapper userHealthMapper;
     private final WeightRecordMapper weightRecordMapper;
+    private final KnowledgeBaseService knowledgeBaseService;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
@@ -34,9 +37,11 @@ public class DashScopeServiceImpl implements DashScopeService {
 
     public DashScopeServiceImpl(UserHealthMapper userHealthMapper,
                                 WeightRecordMapper weightRecordMapper,
+                                KnowledgeBaseService knowledgeBaseService,
                                 ObjectMapper objectMapper) {
         this.userHealthMapper = userHealthMapper;
         this.weightRecordMapper = weightRecordMapper;
+        this.knowledgeBaseService = knowledgeBaseService;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
@@ -45,6 +50,11 @@ public class DashScopeServiceImpl implements DashScopeService {
 
     @Override
     public String generateText(String prompt) {
+        return generateText(prompt, 3000);
+    }
+
+    @Override
+    public String generateText(String prompt, int maxTokens) {
         if (apiKey == null || apiKey.isEmpty()) {
             apiKey = System.getenv("DASHSCOPE_API_KEY");
         }
@@ -63,7 +73,7 @@ public class DashScopeServiceImpl implements DashScopeService {
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("result_format", "text");
-            parameters.put("max_tokens", 2000);
+            parameters.put("max_tokens", maxTokens);
             parameters.put("temperature", 0.3);
             parameters.put("top_p", 0.8);
             requestBody.put("parameters", parameters);
@@ -143,6 +153,19 @@ public class DashScopeServiceImpl implements DashScopeService {
             context.append("\n");
         }
 
+        // ==================== RAG 知识检索 ====================
+        log.warn("=== RAG DEBUG: 准备检索知识库, userId={} ===", userId);
+        List<KnowledgeBase> ragKnowledge = knowledgeBaseService.retrieveRelevantKnowledge(userId);
+        log.warn("=== RAG DEBUG: 检索完成, 结果数量={} ===", ragKnowledge != null ? ragKnowledge.size() : 0);
+        if (ragKnowledge != null && !ragKnowledge.isEmpty()) {
+            context.append("\n【权威健康知识库参考】（请结合以下专业知识制定计划）：\n");
+            for (int i = 0; i < ragKnowledge.size(); i++) {
+                KnowledgeBase kb = ragKnowledge.get(i);
+                context.append((i + 1)).append(". ").append(kb.getTitle()).append("\n");
+                context.append(kb.getContent()).append("\n\n");
+            }
+        }
+
         String prompt = "你现在是一名专业营养师+持证健身教练。\n" +
                 "根据用户提供的健康档案、代谢数据、历史体重、打卡记录以及权威健康知识库内容，为用户生成科学、安全、个性化的一周饮食与运动计划。\n" +
                 "要求内容严谨、条理清晰，贴合用户饮食偏好、过敏禁忌与健康目标。\n" +
@@ -166,6 +189,8 @@ public class DashScopeServiceImpl implements DashScopeService {
                 "        {\"type\": \"晚餐\", \"name\": \"食物名称\", \"calorie\": \"热量\"}\n" +
                 "      ],\n" +
                 "      \"exercise\": [\n" +
+                "        {\"name\": \"运动名称\", \"duration\": \"时长\"},\n" +
+                "        {\"name\": \"运动名称\", \"duration\": \"时长\"},\n" +
                 "        {\"name\": \"运动名称\", \"duration\": \"时长\"}\n" +
                 "      ]\n" +
                 "    }\n" +
@@ -175,7 +200,8 @@ public class DashScopeServiceImpl implements DashScopeService {
                 "1. 每天的饮食和运动安排要有变化，不要重复\n" +
                 "2. 根据用户的健康目标（减肥/增肌/维持健康）调整热量摄入\n" +
                 "3. 考虑用户的饮食偏好和过敏信息\n" +
-                "4. 运动安排要符合用户的活动水平";
+                "4. 运动安排要符合用户的活动水平\n" +
+                "5. 每天必须提供3项运动安排，每项运动不重复";
 
         Map<String, Object> result = new HashMap<>();
         result.put("healthInfo", context.toString());

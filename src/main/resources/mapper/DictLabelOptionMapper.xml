@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.web02.mapper.DictLabelOptionMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.web02.entity.DictLabelOption">
+        <id column="id" property="id"/>
+        <result column="type" property="type"/>
+        <result column="label_name" property="labelName"/>
+        <result column="sort" property="sort"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_deleted" property="isDeleted"/>
+    </resultMap>
+
+    <select id="findByType" resultMap="BaseResultMap">
+        SELECT id, type, label_name, sort, create_time, update_time, is_deleted
+        FROM dict_label_options
+        WHERE type = #{type} AND is_deleted = 0
+        ORDER BY sort ASC
+    </select>
+
+    <select id="findAllActive" resultMap="BaseResultMap">
+        SELECT id, type, label_name, sort, create_time, update_time, is_deleted
+        FROM dict_label_options
+        WHERE is_deleted = 0
+        ORDER BY type, sort ASC
+    </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT id, type, label_name, sort, create_time, update_time, is_deleted
+        FROM dict_label_options
+        WHERE is_deleted = 0
+        ORDER BY type, sort ASC
+    </select>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT id, type, label_name, sort, create_time, update_time, is_deleted
+        FROM dict_label_options
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO dict_label_options (type, label_name, sort, create_time, update_time)
+        VALUES (#{type}, #{labelName}, #{sort}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE dict_label_options
+        SET label_name = #{labelName}, sort = #{sort}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE dict_label_options
+        SET is_deleted = 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

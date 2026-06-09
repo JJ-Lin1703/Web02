@@ -9,15 +9,23 @@
                 <Vue3Lottie :animationLink="'/robot.json'" :width="48" :height="48" />
                 <span class="card-title">AI健康计划</span>
               </div>
-              <el-button type="primary" @click="handleGeneratePlan" :loading="generating">
-                生成新计划
-              </el-button>
+              <div class="card-header-right">
+                <el-button type="success" @click="handleExportPdf" :loading="exporting" :disabled="!currentPlan">
+                  导出PDF
+                </el-button>
+                <el-button type="warning" @click="showTweakDialog" :disabled="!currentPlan">
+                  微调计划
+                </el-button>
+                <el-button type="primary" @click="handleGeneratePlan" :loading="generating">
+                  生成新计划
+                </el-button>
+              </div>
             </div>
           </template>
 
-          <div v-if="loading" class="loading-container">
-            <el-icon class="is-loading" :size="40"><Loading /></el-icon>
-            <p>加载中...</p>
+          <div v-if="loading || generating || tweaking" class="loading-container">
+            <Vue3Lottie :animationLink="'/robot.json'" :width="240" :height="240" />
+            <p>{{ tweaking ? 'AI 正在微调健康计划...' : 'AI 正在生成健康计划...' }}</p>
           </div>
 
           <div v-else-if="!currentPlan" class="empty-container">
@@ -34,35 +42,49 @@
             </div>
 
             <div v-if="weeklyPlanData" class="weekly-plan">
-              <el-row :gutter="16">
-                <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="day in weeklyPlanData" :key="day.dayName">
-                  <el-card class="day-card" shadow="hover">
-                    <template #header>
-                      <div class="day-header">
-                        <span class="day-name">{{ day.dayName }}</span>
-                        <span class="day-date">{{ day.dateStr }}</span>
-                      </div>
-                    </template>
-                    <div class="day-content">
-                      <div class="section">
-                        <h4><el-icon><Bowl /></el-icon> 饮食</h4>
-                        <div v-for="meal in day.diet" :key="meal.type" class="meal-item">
-                          <span class="meal-type">{{ meal.type }}</span>
+              <div class="day-tabs">
+                <button
+                  v-for="day in weeklyPlanData"
+                  :key="day.dayName"
+                  :class="['day-tab', { active: selectedDay === day.dayName }]"
+                  @click="selectedDay = day.dayName"
+                >
+                  <span class="day-tab-name">{{ day.dayName }}</span>
+                  <span class="day-tab-date">{{ day.dateStr }}</span>
+                </button>
+              </div>
+
+              <el-card v-if="selectedDayData" class="day-card" shadow="hover">
+                <template #header>
+                  <div class="day-header">
+                    <span class="day-name">{{ selectedDayData.dayName }}</span>
+                    <span class="day-date">{{ selectedDayData.dateStr }}</span>
+                  </div>
+                </template>
+                <div class="day-content">
+                  <div class="section">
+                    <h4><el-icon><Bowl /></el-icon> 饮食</h4>
+                    <div class="meal-cards">
+                      <div v-for="meal in selectedDayData.diet" :key="meal.type" class="meal-card">
+                        <span class="meal-type-tag">{{ meal.type }}</span>
+                        <div class="meal-card-body">
                           <span class="meal-name">{{ meal.name }}</span>
                           <span class="meal-calorie">{{ meal.calorie }}</span>
                         </div>
                       </div>
-                      <div class="section">
-                        <h4><el-icon><TrendCharts /></el-icon> 运动</h4>
-                        <div v-for="ex in day.exercise" :key="ex.name" class="exercise-item">
-                          <span class="ex-name">{{ ex.name }}</span>
-                          <span class="ex-duration">{{ ex.duration }}</span>
-                        </div>
+                    </div>
+                  </div>
+                  <div class="section">
+                    <h4><el-icon><TrendCharts /></el-icon> 运动</h4>
+                    <div class="exercise-cards">
+                      <div v-for="ex in selectedDayData.exercise" :key="ex.name" class="exercise-card">
+                        <span class="ex-name">{{ ex.name }}</span>
+                        <span class="ex-duration">{{ ex.duration }}</span>
                       </div>
                     </div>
-                  </el-card>
-                </el-col>
-              </el-row>
+                  </div>
+                </div>
+              </el-card>
             </div>
           </div>
         </el-card>
@@ -82,21 +104,70 @@
         </el-card>
       </el-tab-pane>
     </el-tabs>
+
+    <!-- 微调计划弹窗 -->
+    <el-dialog v-model="tweakDialogVisible" title="计划微调反馈" width="550px" append-to-body>
+      <el-form :model="tweakForm" label-width="100px">
+        <el-form-item label="星期">
+          <el-select v-model="tweakForm.dayName" placeholder="请选择">
+            <el-option v-for="d in dayOptions" :key="d" :label="d" :value="d" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="模块">
+          <el-select v-model="tweakForm.module" placeholder="请选择">
+            <el-option label="饮食" value="饮食" />
+            <el-option label="运动" value="运动" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="具体内容">
+          <el-input v-model="tweakForm.itemDesc" placeholder="如：早餐的燕麦粥、慢跑" />
+        </el-form-item>
+        <el-form-item label="不满原因">
+          <el-input v-model="tweakForm.reason" type="textarea" :rows="3" placeholder="请描述为什么不满意..." />
+        </el-form-item>
+      </el-form>
+
+      <div class="tweak-original" v-if="tweakForm.dayName && tweakForm.module && tweakOriginalContent">
+        <p class="tweak-section-label">当前计划内容：</p>
+        <div class="tweak-original-items">
+          <div v-for="(item, i) in tweakOriginalContent" :key="i" class="tweak-original-row">
+            <el-tag size="small" :type="tweakIsDiet ? 'info' : 'warning'">{{ tweakIsDiet ? item.type : item.name }}</el-tag>
+            <span v-if="tweakIsDiet" class="tweak-original-name">{{ item.name }}</span>
+            <span class="tweak-original-extra">{{ tweakIsDiet ? item.calorie : item.duration }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tweak-preview" v-if="tweakForm.dayName && tweakForm.module">
+        <p class="tweak-preview-label">反馈预览：</p>
+        <p class="tweak-preview-text">
+          我对<strong>【{{ tweakForm.dayName }}】</strong>的<strong>【{{ tweakForm.module }}】</strong>不满意<span v-if="tweakForm.itemDesc">，具体是<strong>【{{ tweakForm.itemDesc }}】</strong></span><span v-if="tweakForm.reason">，因为<strong>【{{ tweakForm.reason }}】</strong></span>。请仅修改这一天这一模块，其余保持完全不变。
+        </p>
+      </div>
+
+      <template #footer>
+        <el-button @click="tweakDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleTweakSubmit" :loading="tweaking">
+          提交微调
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Loading, Bowl, TrendCharts } from '@element-plus/icons-vue'
+import { Bowl, TrendCharts } from '@element-plus/icons-vue'
 import { Vue3Lottie } from 'vue3-lottie'
-import { generateAiPlan, getLatestAiPlan } from '@/api/user'
+import { generateAiPlan, getLatestAiPlan, exportAiPlanPdf, tweakAiPlan } from '@/api/user'
 
 const activeTab = ref('plan')
 const loading = ref(false)
 const generating = ref(false)
 const exporting = ref(false)
 const currentPlan = ref(null)
+const selectedDay = ref('周一')
 
 const weeklyPlanData = computed(() => {
   if (!currentPlan.value || !currentPlan.value.planContent) return null
@@ -126,6 +197,11 @@ const weeklyPlanData = computed(() => {
   } catch {
     return null
   }
+})
+
+const selectedDayData = computed(() => {
+  if (!weeklyPlanData.value) return null
+  return weeklyPlanData.value.find(d => d.dayName === selectedDay.value)
 })
 
 const fetchLatestPlan = async () => {
@@ -183,6 +259,60 @@ const handleExportPdf = async () => {
   }
 }
 
+// ==================== 微调计划 ====================
+const dayOptions = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+const tweakDialogVisible = ref(false)
+const tweaking = ref(false)
+const tweakForm = ref({
+  dayName: '',
+  module: '',
+  itemDesc: '',
+  reason: ''
+})
+
+const tweakOriginalContent = computed(() => {
+  if (!weeklyPlanData.value || !tweakForm.value.dayName || !tweakForm.value.module) return null
+  const day = weeklyPlanData.value.find(d => d.dayName === tweakForm.value.dayName)
+  if (!day) return null
+  return tweakForm.value.module === '饮食' ? day.diet : day.exercise
+})
+
+const tweakIsDiet = computed(() => tweakForm.value.module === '饮食')
+
+const showTweakDialog = () => {
+  tweakForm.value = { dayName: '', module: '', itemDesc: '', reason: '' }
+  tweakDialogVisible.value = true
+}
+
+const handleTweakSubmit = async () => {
+  if (!tweakForm.value.dayName || !tweakForm.value.module) {
+    ElMessage.warning('请选择星期和模块')
+    return
+  }
+  if (!tweakForm.value.reason && !tweakForm.value.itemDesc) {
+    ElMessage.warning('请填写具体内容或不满原因')
+    return
+  }
+
+  tweakDialogVisible.value = false
+  tweaking.value = true
+  try {
+    const res = await tweakAiPlan({
+      planId: currentPlan.value.id,
+      ...tweakForm.value
+    })
+    currentPlan.value = res.data
+    selectedDay.value = tweakForm.value.dayName
+    ElMessage.success('计划微调成功')
+  } catch (error) {
+    console.error('微调失败', error)
+    ElMessage.error('微调失败：' + (error.message || '未知错误'))
+  } finally {
+    tweaking.value = false
+  }
+}
+
 onMounted(() => {
   fetchLatestPlan()
 })
@@ -202,6 +332,11 @@ onMounted(() => {
 .card-header-left {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.card-header-right {
+  display: flex;
   gap: 8px;
 }
 
@@ -244,6 +379,49 @@ onMounted(() => {
   margin-top: 20px;
 }
 
+.day-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  justify-content: space-evenly;
+}
+
+.day-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 20px;
+  border: 1.5px solid #e4e7ed;
+  border-radius: 16px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+}
+
+.day-tab:hover {
+  border-color: #26B5B5;
+  background: rgba(38, 181, 181, 0.05);
+}
+
+.day-tab.active {
+  background: #26B5B5;
+  border-color: #26B5B5;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(38, 181, 181, 0.3);
+}
+
+.day-tab-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.day-tab-date {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
 .day-card {
   margin-bottom: 16px;
 }
@@ -282,18 +460,65 @@ onMounted(() => {
   gap: 4px;
 }
 
-.meal-item,
-.exercise-item {
+.meal-cards,
+.exercise-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.meal-card {
+  display: flex;
+  align-items: stretch;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e8ecef;
+  transition: all 0.2s ease;
+}
+
+.meal-card:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border-color: #26B5B5;
+}
+
+.meal-type-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  padding: 12px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: #26B5B5;
+  writing-mode: vertical-rl;
+  letter-spacing: 2px;
+  flex-shrink: 0;
+}
+
+.meal-card-body {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 0;
-  font-size: 13px;
+  padding: 12px 16px;
+  background: #fff;
 }
 
-.meal-type {
-  color: #909399;
-  width: 50px;
+.exercise-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e8ecef;
+  transition: all 0.2s ease;
+}
+
+.exercise-card:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border-color: #26B5B5;
 }
 
 .meal-name {
@@ -328,5 +553,67 @@ onMounted(() => {
   font-size: 14px;
   line-height: 1.6;
   color: #303133;
+}
+
+.tweak-preview {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f0f9f9;
+  border-radius: 10px;
+  border: 1px solid #c8e8e8;
+}
+
+.tweak-preview-label {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  color: #909399;
+}
+
+.tweak-preview-text {
+  margin: 0;
+  font-size: 14px;
+  color: #303133;
+  line-height: 1.7;
+}
+
+.tweak-preview-text strong {
+  color: #3aafaf;
+}
+
+.tweak-original {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #fafbfc;
+  border-radius: 10px;
+  border: 1px solid #e4e7ed;
+}
+
+.tweak-section-label {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #909399;
+}
+
+.tweak-original-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tweak-original-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.tweak-original-name {
+  color: #303133;
+}
+
+.tweak-original-extra {
+  color: #909399;
+  font-size: 13px;
+  margin-left: auto;
 }
 </style>

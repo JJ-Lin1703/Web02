@@ -42,20 +42,14 @@
           <el-col :span="12">
             <el-form-item label="日常活动水平" prop="activityLevel">
               <el-select v-model="formData.activityLevel" placeholder="请选择活动水平">
-                <el-option label="低（久坐少动）" :value="1" />
-                <el-option label="中（轻度运动）" :value="2" />
-                <el-option label="高（经常锻炼）" :value="3" />
+                <el-option v-for="item in activityLevelOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="饮食偏好" prop="dietHobby">
               <el-select v-model="formData.dietHobby" placeholder="请选择饮食偏好">
-                <el-option label="素食" value="素食" />
-                <el-option label="均衡" value="均衡" />
-                <el-option label="高蛋白" value="高蛋白" />
-                <el-option label="低碳水" value="低碳水" />
-                <el-option label="控糖" value="控糖" />
+                <el-option v-for="item in dietHobbyOptions" :key="item" :label="item" :value="item" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -65,9 +59,7 @@
           <el-col :span="24">
             <el-form-item label="健康目标" prop="healthTarget">
               <el-select v-model="formData.healthTarget" placeholder="请选择健康目标">
-                <el-option label="减肥" value="减肥" />
-                <el-option label="增肌" value="增肌" />
-                <el-option label="维持健康" value="维持健康" />
+                <el-option v-for="item in healthTargetOptions" :key="item" :label="item" :value="item" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -107,12 +99,18 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document } from '@element-plus/icons-vue'
-import { getHealthRecord, createHealthRecord, updateHealthRecord } from '@/api/user'
+import { getHealthRecord, createHealthRecord, updateHealthRecord, getDictLabelOptions } from '@/api/user'
 
 const formRef = ref(null)
 const loading = ref(false)
 const isEditMode = ref(false)
 const originalData = ref(null)
+
+// 动态下拉选项
+const healthTargetOptions = ref([])
+const dietHobbyOptions = ref([])
+const allergyOptions = ref([])
+const activityLevelOptions = ref([])
 
 const formData = reactive({
   age: null,
@@ -126,18 +124,26 @@ const formData = reactive({
   medicalHistory: ''
 })
 
-const allergyOptions = [
-  { label: '海鲜', value: '海鲜' },
-  { label: '花生', value: '花生' },
-  { label: '牛奶', value: '牛奶' },
-  { label: '鸡蛋', value: '鸡蛋' },
-  { label: '大豆', value: '大豆' },
-  { label: '小麦', value: '小麦' },
-  { label: '坚果', value: '坚果' },
-  { label: '鱼类', value: '鱼类' },
-  { label: '贝壳类', value: '贝壳类' },
-  { label: '其他', value: '其他' }
-]
+// 加载标签字典，填充所有下拉选项
+const loadDictOptions = async () => {
+  try {
+    const res = await getDictLabelOptions()
+    const pool = res.data  // { 健康目标: [...], 饮食偏好: [...], ... }
+    healthTargetOptions.value = pool['健康目标'] || []
+    dietHobbyOptions.value = pool['饮食偏好'] || []
+    allergyOptions.value = (pool['过敏信息'] || []).map(t => ({ label: t, value: t }))
+
+    // 活动水平：服务端约定 sort=value，label_name=显示文本
+    // 前端无法拿到 sort，改由后端通过专业字段告知，这里直接单独获取
+    const actOpts = (pool['活动水平'] || []).map((label, idx) => ({
+      label,
+      value: idx + 1  // 按 sort 升序返回，idx+1 即 sort
+    }))
+    activityLevelOptions.value = actOpts
+  } catch {
+    ElMessage.error('加载标签字典失败')
+  }
+}
 
 const rules = {
   age: [
@@ -236,6 +242,7 @@ const handleReset = () => {
 }
 
 onMounted(() => {
+  loadDictOptions()
   loadHealthRecord()
 })
 </script>

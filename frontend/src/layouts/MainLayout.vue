@@ -441,7 +441,8 @@ onMounted(() => {
 .content-wrapper {
   display: flex;
   padding-top: 84px;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .aside {
@@ -504,7 +505,8 @@ onMounted(() => {
   padding: 28px;
   margin-left: 224px;
   flex: 1;
-  min-height: calc(100vh - 84px);
+  height: calc(100vh - 84px);
+  overflow-y: auto;
 }
 
 .modal-overlay {

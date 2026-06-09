@@ -1,103 +1,111 @@
 <template>
   <div class="login-container">
-    <div class="login-bg"></div>
-    <div class="login-box">
-      <div class="login-header">
-        <div class="logo">
-          <div class="logo-icon">
-            <svg viewBox="0 0 100 100" class="health-icon">
-              <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" />
-              <path d="M50 25 L50 75 M30 50 L70 50" stroke="white" stroke-width="4" stroke-linecap="round" />
-              <circle cx="50" cy="50" r="15" fill="white" opacity="0.8" />
-              <defs>
-                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#26B5B5" />
-                  <stop offset="100%" stop-color="#0d9488" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <h1>智能健康助手</h1>
-          <p class="subtitle">您的专属健康管理专家</p>
-        </div>
+    <canvas ref="particleCanvas" class="particle-canvas"></canvas>
+    <div class="login-left">
+      <div class="animation-wrapper">
+        <Vue3Lottie :animationLink="'/login-animation.json'" :width="500" :height="500" />
       </div>
-      
-      <el-tabs v-model="activeTab" class="login-tabs">
-        <el-tab-pane label="登录" name="login">
-          <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" label-width="100px">
-            <el-form-item label="用户名" prop="username">
-              <el-input 
-                v-model="loginForm.username" 
-                placeholder="请输入用户名" 
-                size="large"
-                class="form-input"
-              />
-            </el-form-item>
-            <el-form-item label="密码" prop="password">
-              <el-input 
-                v-model="loginForm.password" 
-                type="password" 
-                placeholder="请输入密码" 
-                show-password 
-                size="large"
-                class="form-input"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="handleLogin" size="large" class="login-btn">登录</el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-        <el-tab-pane label="注册" name="register">
-          <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef" label-width="100px">
-            <el-form-item label="用户名" prop="username">
-              <el-input 
-                v-model="registerForm.username" 
-                placeholder="请输入用户名" 
-                size="large"
-                class="form-input"
-              />
-            </el-form-item>
-            <el-form-item label="密码" prop="password">
-              <el-input 
-                v-model="registerForm.password" 
-                type="password" 
-                placeholder="请输入密码" 
-                show-password 
-                size="large"
-                class="form-input"
-              />
-            </el-form-item>
-            <el-form-item label="确认密码" prop="confirmPassword">
-              <el-input 
-                v-model="registerForm.confirmPassword" 
-                type="password" 
-                placeholder="请确认密码" 
-                show-password 
-                size="large"
-                class="form-input"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="handleRegister" size="large" class="login-btn">注册</el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-      </el-tabs>
-      
-      <div class="login-footer">
-        <p>© 2024 智能健康助手 | 关爱您的健康</p>
+    </div>
+    <div class="login-right">
+      <div class="login-box">
+        <div class="login-header">
+          <div class="logo">
+            <div class="logo-icon">
+              <svg viewBox="0 0 100 100" class="health-icon">
+                <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" />
+                <path d="M50 25 L50 75 M30 50 L70 50" stroke="white" stroke-width="4" stroke-linecap="round" />
+                <circle cx="50" cy="50" r="15" fill="white" opacity="0.8" />
+                <defs>
+                  <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#5cc5c5" />
+                    <stop offset="100%" stop-color="#3aafaf" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <h1>智能健康助手</h1>
+            <p class="subtitle">您的专属健康管理专家</p>
+          </div>
+        </div>
+        
+        <el-tabs v-model="activeTab" class="login-tabs">
+          <el-tab-pane label="登录" name="login">
+            <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" label-width="100px">
+              <el-form-item label="用户名" prop="username">
+                <el-input 
+                  v-model="loginForm.username" 
+                  placeholder="请输入用户名" 
+                  size="large"
+                  class="form-input"
+                />
+              </el-form-item>
+              <el-form-item label="密码" prop="password">
+                <el-input 
+                  v-model="loginForm.password" 
+                  type="password" 
+                  placeholder="请输入密码" 
+                  show-password 
+                  size="large"
+                  class="form-input"
+                />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="handleLogin" size="large" class="login-btn">登录</el-button>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+          <el-tab-pane label="注册" name="register">
+            <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef" label-width="100px">
+              <el-form-item label="用户名" prop="username">
+                <el-input 
+                  v-model="registerForm.username" 
+                  placeholder="请输入用户名" 
+                  size="large"
+                  class="form-input"
+                />
+              </el-form-item>
+              <el-form-item label="密码" prop="password">
+                <el-input 
+                  v-model="registerForm.password" 
+                  type="password" 
+                  placeholder="请输入密码" 
+                  show-password 
+                  size="large"
+                  class="form-input"
+                />
+              </el-form-item>
+              <el-form-item label="确认密码" prop="confirmPassword">
+                <el-input 
+                  v-model="registerForm.confirmPassword" 
+                  type="password" 
+                  placeholder="请确认密码" 
+                  show-password 
+                  size="large"
+                  class="form-input"
+                />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="handleRegister" size="large" class="login-btn">注册</el-button>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+        
+        <div class="login-footer">
+          <p>© 2024 智能健康助手 | 关爱您的健康</p>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { userLogin, userRegister, getUserInfo } from '@/api/user'
+import { Vue3Lottie } from 'vue3-lottie'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -194,40 +202,139 @@ const fetchUserInfo = async () => {
   const res = await getUserInfo()
   userStore.setUserInfo(res.data)
 }
+
+// 粒子动画
+const particleCanvas = ref(null)
+
+const initParticles = () => {
+  const canvas = particleCanvas.value
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+
+  const resizeCanvas = () => {
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+  }
+  resizeCanvas()
+  window.addEventListener('resize', resizeCanvas)
+
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width
+      this.y = Math.random() * canvas.height
+      this.vx = (Math.random() - 0.5) * 0.8
+      this.vy = (Math.random() - 0.5) * 0.8
+      this.radius = Math.random() * 3 + 1
+      this.alpha = Math.random() * 0.3 + 0.1
+    }
+    update() {
+      this.x += this.vx
+      this.y += this.vy
+      if (this.x < 0 || this.x > canvas.width) this.vx *= -1
+      if (this.y < 0 || this.y > canvas.height) this.vy *= -1
+    }
+    draw() {
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`
+      ctx.fill()
+    }
+  }
+
+  const particles = []
+  for (let i = 0; i < 40; i++) {
+    particles.push(new Particle())
+  }
+
+  const animate = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    particles.forEach(p => {
+      p.update()
+      p.draw()
+    })
+    requestAnimationFrame(animate)
+  }
+  animate()
+}
+
+onMounted(() => {
+  initParticles()
+})
 </script>
 
 <style scoped>
+.particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .login-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #26B5B5 0%, #0d9488 100%);
+  background: linear-gradient(135deg, #a8e6e6 0%, #7dd3d3 40%, #5cc5c5 100%);
   position: relative;
   overflow: hidden;
 }
 
-.login-bg {
+.login-container::before {
+  content: '';
   position: absolute;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 0%, transparent 70%);
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+              radial-gradient(circle at 70% 30%, rgba(255,255,255,0.05) 0%, transparent 50%),
+              radial-gradient(circle at 50% 70%, rgba(255,255,255,0.06) 0%, transparent 50%);
+  animation: float-bg 20s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.login-left {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes float-bg {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2%, 1%); }
+  50% { transform: translate(1%, -2%); }
+  75% { transform: translate(-1%, -1%); }
+}
+
+.animation-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+.login-right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  position: relative;
+  z-index: 1;
 }
 
 .login-box {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: 48px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   width: 450px;
-  position: relative;
-  z-index: 10;
+  max-width: 100%;
+  min-height: 500px;
 }
 
 .login-header {
@@ -291,11 +398,11 @@ const fetchUserInfo = async () => {
 }
 
 .login-tabs :deep(.el-tabs__item.is-active) {
-  color: #26B5B5;
+  color: #3aafaf;
 }
 
 .login-tabs :deep(.el-tabs__active-bar) {
-  background: linear-gradient(90deg, #26B5B5, #0d9488);
+  background: linear-gradient(90deg, #3aafaf, #2d9d9d);
   height: 3px;
 }
 
@@ -313,6 +420,10 @@ const fetchUserInfo = async () => {
   margin-left: 100px !important;
 }
 
+.login-tabs :deep(.el-form-item:last-child .el-form-item__content) {
+  margin-left: 0 !important;
+}
+
 .form-input {
   font-size: 15px;
 }
@@ -324,12 +435,12 @@ const fetchUserInfo = async () => {
 }
 
 .login-tabs :deep(.el-input__wrapper:hover) {
-  border-color: #26B5B5;
+  border-color: #3aafaf;
   box-shadow: 0 0 0 3px rgba(38, 181, 181, 0.1);
 }
 
 .login-tabs :deep(.el-input__wrapper.is-focus) {
-  border-color: #26B5B5;
+  border-color: #3aafaf;
   box-shadow: 0 0 0 3px rgba(38, 181, 181, 0.2);
 }
 
@@ -338,7 +449,7 @@ const fetchUserInfo = async () => {
   height: 48px;
   font-size: 16px;
   font-weight: 600;
-  background: linear-gradient(135deg, #26B5B5 0%, #0d9488 100%);
+  background: linear-gradient(135deg, #3aafaf 0%, #2d9d9d 100%);
   border: none;
   border-radius: 10px;
   transition: all 0.3s ease;
@@ -364,5 +475,15 @@ const fetchUserInfo = async () => {
   font-size: 13px;
   color: #9ca3af;
   margin: 0;
+}
+
+@media (max-width: 768px) {
+  .login-left {
+    display: none;
+  }
+  .login-box {
+    width: 100%;
+    padding: 32px 24px;
+  }
 }
 </style>

@@ -6,5 +6,7 @@ public interface DashScopeService {
 
     String generateText(String prompt);
 
+    String generateText(String prompt, int maxTokens);
+
     Map<String, Object> generateHealthPlan(Long userId);
 }
