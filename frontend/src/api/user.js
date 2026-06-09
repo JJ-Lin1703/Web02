@@ -145,6 +145,15 @@ export const generateAiPlan = () => {
   })
 }
 
+export const tweakAiPlan = (data) => {
+  return request({
+    url: '/ai-plan/tweak',
+    method: 'post',
+    data,
+    timeout: 120000
+  })
+}
+
 export const getAiPlanHistory = () => {
   return request({
     url: '/ai-plan/history',
@@ -240,6 +249,103 @@ export const exportAiPlanPdf = async (planId = null) => {
     return { success: true, message: '导出成功' }
   } catch (error) {
     console.error('导出PDF失败', error)
-    throw new Error(error.response?.data?.message || error.message || '导出失败')
+    // blob 响应的错误体需要读取为文本才能看到后端错误信息
+    let errMsg = '导出失败'
+    if (error.response?.data instanceof Blob) {
+      try {
+        const text = await new Response(error.response.data).text()
+        const parsed = JSON.parse(text)
+        errMsg = parsed.message || text
+      } catch { /* ignore */ }
+    }
+    throw new Error(errMsg)
   }
+}
+
+// ======================== 知识库管理 ===========================
+
+export const getKnowledgeList = () => {
+  return request({
+    url: '/knowledge-base/list',
+    method: 'get'
+  })
+}
+
+export const getKnowledgeById = (id) => {
+  return request({
+    url: `/knowledge-base/${id}`,
+    method: 'get'
+  })
+}
+
+export const createKnowledge = (data) => {
+  return request({
+    url: '/knowledge-base',
+    method: 'post',
+    data
+  })
+}
+
+export const updateKnowledge = (id, data) => {
+  return request({
+    url: `/knowledge-base/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+export const deleteKnowledge = (id) => {
+  return request({
+    url: `/knowledge-base/${id}`,
+    method: 'delete'
+  })
+}
+
+export const getValidTags = () => {
+  return request({
+    url: '/knowledge-base/tags',
+    method: 'get'
+  })
+}
+
+/** 获取标签字典（分组），用于健康档案下拉框和知识库标签池 */
+export const getDictLabelOptions = () => {
+  return request({
+    url: '/dict-label-options',
+    method: 'get'
+  })
+}
+
+/** 标签字典管理端列表 */
+export const getDictLabelList = () => {
+  return request({
+    url: '/dict-label-options/list',
+    method: 'get'
+  })
+}
+
+/** 新增标签字典 */
+export const createDictLabel = (data) => {
+  return request({
+    url: '/dict-label-options',
+    method: 'post',
+    data
+  })
+}
+
+/** 修改标签字典 */
+export const updateDictLabel = (id, data) => {
+  return request({
+    url: `/dict-label-options/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+/** 删除标签字典 */
+export const deleteDictLabel = (id) => {
+  return request({
+    url: `/dict-label-options/${id}`,
+    method: 'delete'
+  })
 }

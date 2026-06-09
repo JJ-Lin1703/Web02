@@ -1,8 +1,10 @@
 package org.example.web02.controller;
 
+import org.example.web02.dto.request.TweakPlanRequest;
 import org.example.web02.dto.response.ApiResponse;
 import org.example.web02.entity.AiPlan;
 import org.example.web02.exception.BusinessException;
+import org.example.web02.mapper.AiPlanMapper;
 import org.example.web02.service.AiPlanService;
 import org.example.web02.service.PdfExportService;
 import org.springframework.http.HttpHeaders;
@@ -23,10 +25,12 @@ public class AiPlanController {
 
     private final AiPlanService aiPlanService;
     private final PdfExportService pdfExportService;
+    private final AiPlanMapper aiPlanMapper;
 
-    public AiPlanController(AiPlanService aiPlanService, PdfExportService pdfExportService) {
+    public AiPlanController(AiPlanService aiPlanService, PdfExportService pdfExportService, AiPlanMapper aiPlanMapper) {
         this.aiPlanService = aiPlanService;
         this.pdfExportService = pdfExportService;
+        this.aiPlanMapper = aiPlanMapper;
     }
 
     @PostMapping("/generate")
@@ -34,6 +38,14 @@ public class AiPlanController {
         Long userId = (Long) authentication.getPrincipal();
         AiPlan plan = aiPlanService.generatePlan(userId);
         return ApiResponse.success("AI计划生成成功", plan);
+    }
+
+    @PostMapping("/tweak")
+    public ApiResponse<AiPlan> tweakPlan(Authentication authentication,
+                                          @RequestBody TweakPlanRequest request) {
+        Long userId = (Long) authentication.getPrincipal();
+        AiPlan plan = aiPlanService.tweakPlan(userId, request);
+        return ApiResponse.success("计划微调成功", plan);
     }
 
     @GetMapping("/history")
@@ -63,9 +75,9 @@ public class AiPlanController {
                                                  @PathVariable Long id) {
         Long userId = (Long) authentication.getPrincipal();
         
-        AiPlan plan = aiPlanService.getLatestPlan(userId);
-        if (plan == null) {
-            throw new BusinessException("暂无健康计划");
+        AiPlan plan = aiPlanMapper.findById(id);
+        if (plan == null || !plan.getUserId().equals(userId)) {
+            throw new BusinessException("计划不存在或无权访问");
         }
 
         byte[] pdfBytes = pdfExportService.exportHealthPlanToPdf(userId, plan);

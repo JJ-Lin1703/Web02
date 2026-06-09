@@ -195,12 +195,18 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { User, ScaleToOriginal, Minus, TrendCharts, Warning, Document, Refresh, ArrowDown, ArrowUp, FirstAidKit, Food, Aim, InfoFilled, Check, Promotion } from '@element-plus/icons-vue'
-import { getHealthRecord, createHealthRecord, updateHealthRecord } from '@/api/user'
+import { getHealthRecord, createHealthRecord, updateHealthRecord, getDictLabelOptions } from '@/api/user'
 
 const formRef = ref(null)
 const loading = ref(false)
 const isEditMode = ref(false)
 const originalData = ref(null)
+
+// 动态下拉选项
+const healthTargetOptions = ref([])
+const dietHobbyOptions = ref([])
+const allergyOptions = ref([])
+const activityLevelOptions = ref([])
 
 const formData = reactive({
   age: null,
@@ -214,18 +220,26 @@ const formData = reactive({
   medicalHistory: ''
 })
 
-const allergyOptions = [
-  { label: '海鲜', value: '海鲜' },
-  { label: '花生', value: '花生' },
-  { label: '牛奶', value: '牛奶' },
-  { label: '鸡蛋', value: '鸡蛋' },
-  { label: '大豆', value: '大豆' },
-  { label: '小麦', value: '小麦' },
-  { label: '坚果', value: '坚果' },
-  { label: '鱼类', value: '鱼类' },
-  { label: '贝壳类', value: '贝壳类' },
-  { label: '其他', value: '其他' }
-]
+// 加载标签字典，填充所有下拉选项
+const loadDictOptions = async () => {
+  try {
+    const res = await getDictLabelOptions()
+    const pool = res.data  // { 健康目标: [...], 饮食偏好: [...], ... }
+    healthTargetOptions.value = pool['健康目标'] || []
+    dietHobbyOptions.value = pool['饮食偏好'] || []
+    allergyOptions.value = (pool['过敏信息'] || []).map(t => ({ label: t, value: t }))
+
+    // 活动水平：服务端约定 sort=value，label_name=显示文本
+    // 前端无法拿到 sort，改由后端通过专业字段告知，这里直接单独获取
+    const actOpts = (pool['活动水平'] || []).map((label, idx) => ({
+      label,
+      value: idx + 1  // 按 sort 升序返回，idx+1 即 sort
+    }))
+    activityLevelOptions.value = actOpts
+  } catch {
+    ElMessage.error('加载标签字典失败')
+  }
+}
 
 const healthGoals = [
   { value: '减肥', label: '减肥', desc: '减少体重，塑造身材', icon: 'down', bgColor: 'linear-gradient(135deg, #f56c6c 0%, #f89898 100%)' },
@@ -349,6 +363,7 @@ const handleReset = () => {
 }
 
 onMounted(() => {
+  loadDictOptions()
   loadHealthRecord()
 })
 </script>

@@ -305,8 +305,15 @@ const dietTasks = computed(() => dailyTasks.value.filter(t => t.type === '饮食
 const exerciseTasks = computed(() => dailyTasks.value.filter(t => t.type === '运动'));
 const dietTotalCalorie = computed(() => {
  return dietTasks.value.reduce((sum, task) => {
- const match = task.calorie?.match(/(\d+)/);
- return sum + (match ? parseInt(match[1]) : 0);
+   const calorie = task.calorie;
+   let value = 0;
+   if (typeof calorie === 'number') {
+     value = calorie;
+   } else if (typeof calorie === 'string') {
+     const match = calorie.match(/(\d+)/);
+     value = match ? parseInt(match[1]) : 0;
+   }
+   return sum + value;
  }, 0);
 });
 const weeklyStatsData = reactive({
