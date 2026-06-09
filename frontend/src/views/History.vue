@@ -5,7 +5,7 @@
         <el-card>
           <template #header>
             <div class="card-header">
-              <span class="card-title">记录体重</span>
+<span class="card-title">记录体重</span>
             </div>
           </template>
           <el-form :inline="true" :model="weightForm" class="weight-form">
@@ -24,7 +24,7 @@
         <el-card style="margin-top: 16px">
           <template #header>
             <div class="card-header">
-              <span class="card-title">体重历史</span>
+<span class="card-title">体重历史</span>
               <div class="search-bar">
                 <el-date-picker
                   v-model="searchForm.startDate"
@@ -67,7 +67,7 @@
             </el-table-column>
             <el-table-column label="操作" width="180">
               <template #default="{ row }">
-                <el-button type="primary" @click="handleEditWeight(row)">修改</el-button>
+<el-button type="primary" @click="handleEditWeight(row)">修改</el-button>
                 <el-button type="danger" @click="handleDeleteWeight(row.id)">删除</el-button>
               </template>
             </el-table-column>
@@ -110,7 +110,7 @@
       <el-tab-pane label="签到记录" name="checkin">
         <el-card>
           <template #header>
-            <span class="card-title">签到历史</span>
+<span class="card-title">签到历史</span>
           </template>
           <el-table :data="checkinHistory" stripe v-loading="checkinLoading" empty-text="暂无签到记录">
             <el-table-column prop="checkinDate" label="签到日期" width="150">
@@ -190,7 +190,6 @@ const planSortBy = ref('desc')
 
 const planDetailVisible = ref(false)
 const selectedPlan = ref(null)
-
 const editDialogVisible = ref(false)
 const editLoading = ref(false)
 const editForm = reactive({
@@ -327,7 +326,6 @@ const handleDeletePlan = async (id) => {
     // 取消或错误均由拦截器处理
   }
 }
-
 const handleTabChange = (name) => {
   if (name === 'weight') {
     fetchWeightHistory()
@@ -367,7 +365,6 @@ const formatPlanContent = (content) => {
     return content;
   }
 }
-
 onMounted(() => {
   fetchWeightHistory()
 })

@@ -1,1 +1,0 @@
-import{V as e,W as t,et as n,q as r}from"./index-_h-PWT41.js";var i={},a={class:`page`};function o(e,i){return n(),r(`div`,a,[...i[0]||=[t(`h1`,null,`404`,-1),t(`p`,null,`页面不存在`,-1)]])}var s=e(i,[[`render`,o],[`__scopeId`,`data-v-654123b0`]]);export{s as default};

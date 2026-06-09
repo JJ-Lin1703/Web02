@@ -1,10 +1,10 @@
 <template>
   <div class="home-container">
     <el-row :gutter="20">
-      <el-col :span="6">
+      <el-col :span="5">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <el-icon class="stat-icon" :size="40" color="#409eff"><Calendar /></el-icon>
+            <el-icon class="stat-icon" :size="36" color="#409eff"><Calendar /></el-icon>
             <div class="stat-info">
               <span class="stat-value">{{ checkinStatus.totalDays }}</span>
               <span class="stat-label">累计签到</span>
@@ -12,10 +12,10 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="5">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <el-icon class="stat-icon" :size="40" color="#67c23a"><TrendCharts /></el-icon>
+            <el-icon class="stat-icon" :size="36" color="#67c23a"><TrendCharts /></el-icon>
             <div class="stat-info">
               <span class="stat-value">{{ checkinStatus.continuousDays }}</span>
               <span class="stat-label">连续签到</span>
@@ -23,10 +23,10 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="5">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <el-icon class="stat-icon" :size="40" color="#e6a23c"><ScaleToOriginal /></el-icon>
+            <el-icon class="stat-icon" :size="36" color="#e6a23c"><ScaleToOriginal /></el-icon>
             <div class="stat-info">
               <span class="stat-value">{{ statistics.weightRecords }}</span>
               <span class="stat-label">体重记录</span>
@@ -34,10 +34,10 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="5">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <el-icon class="stat-icon" :size="40" color="#f56c6c"><Document /></el-icon>
+            <el-icon class="stat-icon" :size="36" color="#f56c6c"><Document /></el-icon>
             <div class="stat-info">
               <span class="stat-value">{{ statistics.aiPlans }}</span>
               <span class="stat-label">AI计划</span>
@@ -45,29 +45,20 @@
           </div>
         </el-card>
       </el-col>
-    </el-row>
-
-    <el-row :gutter="20" style="margin-top: 20px">
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>今日签到</span>
-              <el-tag v-if="checkinStatus.checkedInToday" type="success">已签到</el-tag>
-              <el-tag v-else type="info">未签到</el-tag>
+      <el-col :span="4">
+        <el-card class="checkin-compact" shadow="hover">
+          <div v-if="checkinStatus.checkedInToday" class="checkin-done">
+            <div class="checkin-circle done">
+              <el-icon :size="28" color="#fff"><CircleCheck /></el-icon>
             </div>
-          </template>
-          <div class="checkin-content">
-            <div v-if="checkinStatus.checkedInToday" class="checked">
-              <el-icon :size="60" color="#67c23a"><CircleCheck /></el-icon>
-              <p>今日已签到</p>
-              <p class="sub-text">连续签到 {{ checkinStatus.continuousDays }} 天</p>
+            <span class="checkin-text">已签到</span>
+          </div>
+          <div v-else class="checkin-undone">
+            <div class="checkin-circle" @click="handleCheckin">
+              <el-icon v-if="!checkinLoading" :size="28" color="#409eff"><CircleCheck /></el-icon>
+              <el-icon v-else :size="28" color="#409eff" class="is-loading"><Loading /></el-icon>
             </div>
-            <div v-else class="not-checked">
-              <el-button type="primary" size="large" @click="handleCheckin" :loading="checkinLoading">
-                立即签到
-              </el-button>
-            </div>
+            <span class="checkin-text">签到</span>
           </div>
         </el-card>
       </el-col>
@@ -109,51 +100,6 @@
             <div class="metric-desc">每日建议摄入热量</div>
           </div>
         </div>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="20" style="margin-top: 20px" v-if="healthRecord && calorieRange">
-      <el-col :span="24">
-        <el-card>
-          <div class="calorie-card">
-            <div class="calorie-header">
-              <el-icon :size="20" color="#722ed1"><Lightning /></el-icon>
-              <span class="calorie-title">建议热量摄入范围</span>
-            </div>
-            <div class="calorie-content">
-              <div class="calorie-item" :class="{ active: healthRecord.healthTarget === '减肥' }">
-                <div class="calorie-icon" style="background: linear-gradient(135deg, #f56c6c 0%, #f89898 100%)">
-                  <el-icon :size="18" color="#fff"><ArrowDown /></el-icon>
-                </div>
-                <div class="calorie-info">
-                  <div class="calorie-label">减肥</div>
-                  <div class="calorie-range">{{ calorieRange.loseWeight.min }} - {{ calorieRange.loseWeight.max }} <span class="calorie-unit">kcal/天</span></div>
-                  <div class="calorie-hint">TDEE - 400 ~ TDEE - 200</div>
-                </div>
-              </div>
-              <div class="calorie-item" :class="{ active: healthRecord.healthTarget === '增肌' }">
-                <div class="calorie-icon" style="background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%)">
-                  <el-icon :size="18" color="#fff"><ArrowUp /></el-icon>
-                </div>
-                <div class="calorie-info">
-                  <div class="calorie-label">增肌</div>
-                  <div class="calorie-range">{{ calorieRange.gainMuscle.min }} - {{ calorieRange.gainMuscle.max }} <span class="calorie-unit">kcal/天</span></div>
-                  <div class="calorie-hint">TDEE + 200 ~ TDEE + 400</div>
-                </div>
-              </div>
-              <div class="calorie-item" :class="{ active: healthRecord.healthTarget === '维持健康' }">
-                <div class="calorie-icon" style="background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%)">
-                  <el-icon :size="18" color="#fff"><Minus /></el-icon>
-                </div>
-                <div class="calorie-info">
-                  <div class="calorie-label">维持健康</div>
-                  <div class="calorie-range">{{ calorieRange.maintain.min }} - {{ calorieRange.maintain.max }} <span class="calorie-unit">kcal/天</span></div>
-                  <div class="calorie-hint">≈ TDEE</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </el-card>
       </el-col>
     </el-row>
 
@@ -201,13 +147,58 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <el-row :gutter="20" style="margin-top: 20px" v-if="healthRecord && calorieRange">
+      <el-col :span="24">
+        <el-card>
+          <div class="calorie-card">
+            <div class="calorie-header">
+              <el-icon :size="20" color="#722ed1"><Lightning /></el-icon>
+              <span class="calorie-title">建议热量摄入范围</span>
+            </div>
+            <div class="calorie-content">
+              <div class="calorie-item" :class="{ active: healthRecord.healthTarget === '减肥' }">
+                <div class="calorie-icon" style="background: linear-gradient(135deg, #f56c6c 0%, #f89898 100%)">
+                  <el-icon :size="18" color="#fff"><ArrowDown /></el-icon>
+                </div>
+                <div class="calorie-info">
+                  <div class="calorie-label">减肥</div>
+                  <div class="calorie-range">{{ calorieRange.loseWeight.min }} - {{ calorieRange.loseWeight.max }} <span class="calorie-unit">kcal/天</span></div>
+                  <div class="calorie-hint">TDEE - 400 ~ TDEE - 200</div>
+                </div>
+              </div>
+              <div class="calorie-item" :class="{ active: healthRecord.healthTarget === '增肌' }">
+                <div class="calorie-icon" style="background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%)">
+                  <el-icon :size="18" color="#fff"><ArrowUp /></el-icon>
+                </div>
+                <div class="calorie-info">
+                  <div class="calorie-label">增肌</div>
+                  <div class="calorie-range">{{ calorieRange.gainMuscle.min }} - {{ calorieRange.gainMuscle.max }} <span class="calorie-unit">kcal/天</span></div>
+                  <div class="calorie-hint">TDEE + 200 ~ TDEE + 400</div>
+                </div>
+              </div>
+              <div class="calorie-item" :class="{ active: healthRecord.healthTarget === '维持健康' }">
+                <div class="calorie-icon" style="background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%)">
+                  <el-icon :size="18" color="#fff"><Minus /></el-icon>
+                </div>
+                <div class="calorie-info">
+                  <div class="calorie-label">维持健康</div>
+                  <div class="calorie-range">{{ calorieRange.maintain.min }} - {{ calorieRange.maintain.max }} <span class="calorie-unit">kcal/天</span></div>
+                  <div class="calorie-hint">≈ TDEE</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Calendar, TrendCharts, ScaleToOriginal, Document, CircleCheck, Check, Lightning, DataAnalysis, ArrowDown, ArrowUp, Minus } from '@element-plus/icons-vue'
+import { Calendar, TrendCharts, ScaleToOriginal, Document, CircleCheck, Check, Lightning, DataAnalysis, ArrowDown, ArrowUp, Minus, Loading } from '@element-plus/icons-vue'
 import { getCheckinStatus, dailyCheckin, getHealthRecord, getLatestAiPlan, getWeightHistory, getAiPlanHistory } from '@/api/user'
 
 const checkinStatus = reactive({
@@ -341,46 +332,69 @@ onMounted(() => {
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 600;
   color: #303133;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #909399;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.checkin-compact {
+  height: 100%;
 }
 
-.checkin-content {
+.checkin-compact :deep(.el-card__body) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 12px;
+}
+
+.checkin-done, .checkin-undone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  gap: 8px;
 }
 
-.checked {
-  text-align: center;
+.checkin-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #5b9bd5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(91, 155, 213, 0.04);
 }
 
-.checked p {
-  margin: 8px 0 0 0;
-  font-size: 16px;
-  color: #303133;
+.checkin-circle:hover {
+  background: rgba(91, 155, 213, 0.12);
+  transform: scale(1.06);
+  box-shadow: 0 4px 16px rgba(91, 155, 213, 0.15);
 }
 
-.checked .sub-text {
-  font-size: 14px;
-  color: #909399;
+.checkin-circle.done {
+  background: #67c23a;
+  border-color: #67c23a;
+  cursor: default;
 }
 
-.not-checked {
-  padding: 20px;
+.checkin-circle.done:hover {
+  transform: none;
+  background: #67c23a;
+}
+
+.checkin-text {
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
 }
 
 .metric-card {
@@ -388,8 +402,10 @@ onMounted(() => {
   align-items: center;
   gap: 20px;
   padding: 24px;
-  border-radius: 16px;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  /* border-radius: var(--radius-lg); */
+  border-radius: 32px;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-card);
   
   &:hover {
     transform: translateY(-4px);
@@ -425,7 +441,8 @@ onMounted(() => {
   width: 64px;
   height: 64px;
   background: rgba(255, 255, 255, 0.25);
-  border-radius: 16px;
+  border-radius: 32px;
+  /* border-radius: var(--radius-lg); */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -468,8 +485,9 @@ onMounted(() => {
 }
 
 .calorie-card {
-  background: #fafafa;
-  border-radius: 16px;
+  background: #faf8f6;
+  border-radius: 32px;
+  /* border-radius: var(--radius-lg); */
   padding: 24px;
 }
 
@@ -496,7 +514,8 @@ onMounted(() => {
   flex: 1;
   min-width: calc(33.33% - 14px);
   background: #ffffff;
-  border-radius: 14px;
+  border-radius: 32px;
+  /* border-radius: var(--radius-lg); */
   padding: 20px;
   display: flex;
   align-items: center;
@@ -518,7 +537,8 @@ onMounted(() => {
 .calorie-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 32px;
+  /* border-radius: var(--radius-sm); */
   display: flex;
   align-items: center;
   justify-content: center;

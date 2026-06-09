@@ -1,11 +1,13 @@
 package org.example.web02.controller;
 
 import org.example.web02.dto.response.ApiResponse;
+import org.example.web02.entity.DailyCheckin;
 import org.example.web02.service.CheckinService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController

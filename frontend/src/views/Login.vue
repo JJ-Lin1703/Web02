@@ -11,8 +11,8 @@
               <circle cx="50" cy="50" r="15" fill="white" opacity="0.8" />
               <defs>
                 <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#667eea" />
-                  <stop offset="100%" stop-color="#764ba2" />
+                  <stop offset="0%" stop-color="#26B5B5" />
+                  <stop offset="100%" stop-color="#0d9488" />
                 </linearGradient>
               </defs>
             </svg>
@@ -202,7 +202,7 @@ const fetchUserInfo = async () => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #26B5B5 0%, #0d9488 100%);
   position: relative;
   overflow: hidden;
 }
@@ -218,10 +218,13 @@ const fetchUserInfo = async () => {
 }
 
 .login-box {
-  background: white;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   padding: 48px;
   border-radius: 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   width: 450px;
   position: relative;
   z-index: 10;
@@ -288,11 +291,11 @@ const fetchUserInfo = async () => {
 }
 
 .login-tabs :deep(.el-tabs__item.is-active) {
-  color: #667eea;
+  color: #26B5B5;
 }
 
 .login-tabs :deep(.el-tabs__active-bar) {
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: linear-gradient(90deg, #26B5B5, #0d9488);
   height: 3px;
 }
 
@@ -321,13 +324,13 @@ const fetchUserInfo = async () => {
 }
 
 .login-tabs :deep(.el-input__wrapper:hover) {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #26B5B5;
+  box-shadow: 0 0 0 3px rgba(38, 181, 181, 0.1);
 }
 
 .login-tabs :deep(.el-input__wrapper.is-focus) {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  border-color: #26B5B5;
+  box-shadow: 0 0 0 3px rgba(38, 181, 181, 0.2);
 }
 
 .login-btn {
@@ -335,7 +338,7 @@ const fetchUserInfo = async () => {
   height: 48px;
   font-size: 16px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #26B5B5 0%, #0d9488 100%);
   border: none;
   border-radius: 10px;
   transition: all 0.3s ease;
@@ -343,7 +346,7 @@ const fetchUserInfo = async () => {
 
 .login-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(38, 181, 181, 0.4);
 }
 
 .login-btn:active {

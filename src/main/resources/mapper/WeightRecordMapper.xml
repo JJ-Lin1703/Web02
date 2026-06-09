@@ -52,7 +52,6 @@
           AND record_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ORDER BY record_date ASC
     </select>
-
     <select id="findById" resultMap="WeightRecordResultMap">
         SELECT * FROM weight_record WHERE id = #{id} AND is_deleted = 0
     </select>

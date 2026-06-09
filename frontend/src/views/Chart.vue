@@ -182,6 +182,8 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .filter-bar {
@@ -191,6 +193,6 @@ onUnmounted(() => {
 
 .chart-container {
   width: 100%;
-  height: 400px;
+  height: 450px;
 }
 </style>
