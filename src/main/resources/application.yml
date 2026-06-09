@@ -1,9 +1,20 @@
 server:
-  port: 8080
+  port: 8081
+  tomcat:
+    keep-alive-timeout: 180000
+    connection-timeout: 180000
+    accept-count: 100
+    max-connections: 10000
+    threads:
+      max: 200
+      min-spare: 10
 
 spring:
   application:
     name: smart-health-helper
+  mvc:
+    async:
+      request-timeout: 180000
   datasource:
     url: jdbc:mysql://localhost:3306/smart_health_helper?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root

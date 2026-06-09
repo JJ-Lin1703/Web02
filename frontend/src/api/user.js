@@ -1,4 +1,6 @@
 import request from '@/utils/request'
+import axios from 'axios'
+import { useUserStore } from '@/stores/user'
 
 export const userLogin = (data) => {
   return request({
@@ -139,7 +141,7 @@ export const generateAiPlan = () => {
   return request({
     url: '/ai-plan/generate',
     method: 'post',
-    timeout: 60000
+    timeout: 120000
   })
 }
 
@@ -162,4 +164,44 @@ export const deleteAiPlan = (id) => {
     url: `/ai-plan/${id}`,
     method: 'delete'
   })
+}
+
+export const exportAiPlanPdf = async (planId = null) => {
+  const userStore = useUserStore()
+  const url = planId ? `/api/ai-plan/export/${planId}` : '/api/ai-plan/export/latest'
+  
+  try {
+    const response = await axios({
+      url: url,
+      method: 'get',
+      headers: {
+        Authorization: `Bearer ${userStore.token}`
+      },
+      responseType: 'blob',
+      timeout: 60000
+    })
+    
+    const contentDisposition = response.headers['content-disposition']
+    let filename = '健康计划.pdf'
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (match && match[1]) {
+        filename = decodeURIComponent(match[1].replace(/['"]/g, ''))
+      }
+    }
+    
+    const urlObject = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+    const link = document.createElement('a')
+    link.href = urlObject
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(urlObject)
+    
+    return { success: true, message: '导出成功' }
+  } catch (error) {
+    console.error('导出PDF失败', error)
+    throw new Error(error.response?.data?.message || error.message || '导出失败')
+  }
 }

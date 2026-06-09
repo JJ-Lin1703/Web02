@@ -50,7 +50,12 @@ public class AiPlanServiceImpl implements AiPlanService {
         AiPlan plan = new AiPlan();
         plan.setUserId(userId);
         plan.setPlanTitle((String) planResult.get("planTitle"));
-        plan.setTotalCalorie((Integer) planResult.get("totalCalorie"));
+        Object calorieObj = planResult.get("totalCalorie");
+        if (calorieObj instanceof Number) {
+            plan.setTotalCalorie(((Number) calorieObj).intValue());
+        } else {
+            plan.setTotalCalorie(health.getTdee() != null ? health.getTdee().intValue() : 2000);
+        }
         plan.setPlanContent((String) planResult.get("planContent"));
         plan.setVersionNo(versionNo);
         plan.setParentPlanId(parentPlanId);

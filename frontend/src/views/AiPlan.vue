@@ -6,9 +6,20 @@
           <template #header>
             <div class="card-header">
               <span class="card-title">AI健康计划</span>
-              <el-button type="primary" @click="handleGeneratePlan" :loading="generating">
-                生成新计划
-              </el-button>
+              <div class="card-actions">
+                <el-button 
+                  type="success" 
+                  @click="handleExportPdf" 
+                  :loading="exporting"
+                  :disabled="!currentPlan"
+                  icon="Download"
+                >
+                  导出PDF
+                </el-button>
+                <el-button type="primary" @click="handleGeneratePlan" :loading="generating">
+                  生成新计划
+                </el-button>
+              </div>
             </div>
           </template>
 
@@ -84,13 +95,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, Bowl, TrendCharts } from '@element-plus/icons-vue'
-import { generateAiPlan, getLatestAiPlan } from '@/api/user'
+import { generateAiPlan, getLatestAiPlan, exportAiPlanPdf } from '@/api/user'
 
 const activeTab = ref('plan')
 const loading = ref(false)
 const generating = ref(false)
+const exporting = ref(false)
 const currentPlan = ref(null)
 
 const weeklyPlanData = computed(() => {
@@ -158,6 +170,26 @@ const formatPlanContent = (content) => {
   }
 }
 
+const handleExportPdf = async () => {
+  if (!currentPlan.value) {
+    ElMessage.warning('请先生成健康计划')
+    return
+  }
+  
+  exporting.value = true
+  try {
+    await exportAiPlanPdf(currentPlan.value.id)
+    ElMessage.success('PDF导出成功')
+  } catch (error) {
+    console.error('导出失败', error)
+    await ElMessageBox.alert(`导出失败：${error.message}`, '导出失败', {
+      type: 'error'
+    })
+  } finally {
+    exporting.value = false
+  }
+}
+
 onMounted(() => {
   fetchLatestPlan()
 })
@@ -172,6 +204,11 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.card-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .card-title {

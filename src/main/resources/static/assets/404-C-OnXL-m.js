@@ -1,1 +1,0 @@
-import{B as e,L as t,P as n,W as r}from"./index-Cc0gEE_a.js";var i={},a={class:`page`};function o(n,i){return r(),e(`div`,a,[...i[0]||=[t(`h1`,null,`404`,-1),t(`p`,null,`页面不存在`,-1)]])}var s=n(i,[[`render`,o],[`__scopeId`,`data-v-654123b0`]]);export{s as default};

@@ -55,18 +55,21 @@ public class DashScopeServiceImpl implements DashScopeService {
 
         try {
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "deepseek-v4-pro");
+            requestBody.put("model", "qwen-turbo");
 
             Map<String, Object> input = new HashMap<>();
             input.put("prompt", prompt);
             requestBody.put("input", input);
 
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("result_format", "message");
-            parameters.put("max_tokens", 3000);
+            parameters.put("result_format", "text");
+            parameters.put("max_tokens", 2000);
+            parameters.put("temperature", 0.3);
+            parameters.put("top_p", 0.8);
             requestBody.put("parameters", parameters);
 
             String jsonBody = objectMapper.writeValueAsString(requestBody);
+            log.info("AI请求体: {}", jsonBody);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
@@ -77,16 +80,27 @@ public class DashScopeServiceImpl implements DashScopeService {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            log.info("AI响应状态码: {}, 响应体: {}", response.statusCode(), response.body());
 
             if (response.statusCode() == 200) {
                 JsonNode responseJson = objectMapper.readTree(response.body());
                 JsonNode output = responseJson.path("output");
                 JsonNode choices = output.path("choices");
+                
                 if (choices.isArray() && choices.size() > 0) {
                     JsonNode message = choices.get(0).path("message");
-                    return message.path("content").asText();
+                    String content = message.path("content").asText();
+                    if (content != null && !content.isEmpty()) {
+                        return content;
+                    }
                 }
-                return output.path("text").asText();
+                
+                String text = output.path("text").asText();
+                if (text != null && !text.isEmpty()) {
+                    return text;
+                }
+                
+                return response.body();
             } else {
                 log.error("阿里百炼API调用失败: status={}, body={}", response.statusCode(), response.body());
                 throw new RuntimeException("AI服务调用失败: " + response.statusCode());
@@ -117,18 +131,23 @@ public class DashScopeServiceImpl implements DashScopeService {
         context.append("7. 健康目标：").append(health.getHealthTarget() != null ? health.getHealthTarget() : "未设置").append("\n");
         context.append("8. 过敏信息：").append(health.getAllergy() != null ? health.getAllergy() : "无").append("\n");
         context.append("9. 病史：").append(health.getMedicalHistory() != null ? health.getMedicalHistory() : "无").append("\n");
-        context.append("10. 基础代谢率(BMR)：").append(health.getBmr()).append("kcal\n");
-        context.append("11. 每日总能量消耗(TDEE)：").append(health.getTdee()).append("kcal\n");
-        context.append("12. BMI指数：").append(health.getBmi()).append("\n");
+        context.append("10. 基础代谢率(BMR)：").append(health.getBmr() != null ? health.getBmr().intValue() : "未计算").append("kcal\n");
+        context.append("11. 每日总能量消耗(TDEE)：").append(health.getTdee() != null ? health.getTdee().intValue() : "未计算").append("kcal\n");
+        context.append("12. BMI指数：").append(health.getBmi() != null ? health.getBmi() : "未计算").append("\n");
 
         if (recentWeight != null && !recentWeight.isEmpty()) {
             context.append("\n近30天体重记录（共").append(recentWeight.size()).append("条）：\n");
             for (WeightRecord record : recentWeight) {
                 context.append("- ").append(record.getRecordDate()).append(": ").append(record.getWeight()).append("kg\n");
             }
+            context.append("\n");
         }
 
-        String prompt = context + "\n\n请基于以上用户健康档案信息，生成一份个性化的一周健康计划，请以JSON格式返回，包含以下字段：\n" +
+        String prompt = "你现在是一名专业营养师+持证健身教练。\n" +
+                "根据用户提供的健康档案、代谢数据、历史体重、打卡记录以及权威健康知识库内容，为用户生成科学、安全、个性化的一周饮食与运动计划。\n" +
+                "要求内容严谨、条理清晰，贴合用户饮食偏好、过敏禁忌与健康目标。\n" +
+                "严格按照下方 JSON 格式输出，禁止输出任何额外解释或闲聊。\n\n" +
+                context + "\n\n请基于以上用户健康档案信息，生成一份个性化的一周健康计划，请以JSON格式返回，包含以下字段：\n" +
                 "{\n" +
                 "  \"planTitle\": \"个性化一周健康计划\",\n" +
                 "  \"totalCalorie\": 每日建议总热量（数字），\n" +
@@ -158,36 +177,50 @@ public class DashScopeServiceImpl implements DashScopeService {
                 "3. 考虑用户的饮食偏好和过敏信息\n" +
                 "4. 运动安排要符合用户的活动水平";
 
-        String response = generateText(prompt);
-
         Map<String, Object> result = new HashMap<>();
-        result.put("rawResponse", response);
         result.put("healthInfo", context.toString());
 
         try {
+            String response = generateText(prompt);
+            log.info("AI响应原始内容: {}", response);
+            result.put("rawResponse", response);
+
             String jsonStr = extractJsonFromResponse(response);
-            if (jsonStr != null) {
-                Map<String, Object> planData = objectMapper.readValue(jsonStr, Map.class);
-                result.put("planTitle", planData.get("planTitle"));
-                result.put("totalCalorie", planData.get("totalCalorie"));
-                
-                Map<String, Object> planContentMap = new HashMap<>();
-                planContentMap.put("summary", planData.get("summary"));
-                planContentMap.put("weeklyPlan", planData.get("weeklyPlan"));
-                
-                result.put("planContent", objectMapper.writeValueAsString(planContentMap));
+            log.info("提取的JSON字符串: {}", jsonStr);
+            
+            if (jsonStr != null && !jsonStr.isEmpty()) {
+                try {
+                    Map<String, Object> planData = objectMapper.readValue(jsonStr, Map.class);
+                    
+                    if (planData.containsKey("planTitle") || planData.containsKey("weeklyPlan")) {
+                        result.put("planTitle", planData.getOrDefault("planTitle", "个性化健康计划"));
+                        result.put("totalCalorie", safeToInteger(planData.get("totalCalorie"),
+                                health.getTdee() != null ? health.getTdee().intValue() : 2000));
+
+                        Map<String, Object> planContentMap = new HashMap<>();
+                        planContentMap.put("summary", planData.get("summary"));
+                        planContentMap.put("weeklyPlan", planData.get("weeklyPlan"));
+
+                        result.put("planContent", objectMapper.writeValueAsString(planContentMap));
+                        log.info("成功使用AI生成的计划");
+                    } else {
+                        log.warn("AI响应JSON格式不完整，缺少必要字段，使用默认计划");
+                        throw new RuntimeException("AI响应JSON格式不完整");
+                    }
+                } catch (Exception e) {
+                    log.warn("解析AI响应JSON失败: {}", e.getMessage());
+                    throw e;
+                }
             } else {
-                result.put("planTitle", "个性化健康计划");
-                result.put("totalCalorie", health.getTdee() != null ? health.getTdee().intValue() : 2000);
-                
-                Map<String, Object> fallbackPlan = generateFallbackPlan(health);
-                result.put("planContent", objectMapper.writeValueAsString(fallbackPlan));
+                log.warn("无法从AI响应中提取JSON，使用默认计划");
+                throw new RuntimeException("无法从AI响应中提取JSON");
             }
         } catch (Exception e) {
-            log.warn("解析AI响应失败，使用默认计划", e);
+            log.warn("AI服务调用或解析失败，使用默认计划: {}", e.getMessage());
             result.put("planTitle", "个性化健康计划");
             result.put("totalCalorie", health.getTdee() != null ? health.getTdee().intValue() : 2000);
-            
+            result.put("rawResponse", "AI服务不可用: " + e.getMessage());
+
             Map<String, Object> fallbackPlan = generateFallbackPlan(health);
             try {
                 result.put("planContent", objectMapper.writeValueAsString(fallbackPlan));
@@ -206,6 +239,26 @@ public class DashScopeServiceImpl implements DashScopeService {
             case 3 -> "高（经常锻炼）";
             default -> "未知";
         };
+    }
+
+    private Integer safeToInteger(Object value, Integer defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt(((String) value).trim());
+            } catch (NumberFormatException e) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
     }
 
     private String extractJsonFromResponse(String response) {
