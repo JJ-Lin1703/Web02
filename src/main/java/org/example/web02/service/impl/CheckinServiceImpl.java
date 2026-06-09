@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
+import java.util.List;
 
 @Service
 public class CheckinServiceImpl implements CheckinService {
@@ -87,6 +88,11 @@ public class CheckinServiceImpl implements CheckinService {
         Date endDate = Date.valueOf(weekEnd);
         
         return dailyCheckinMapper.countByUserIdAndDateRange(userId, startDate, endDate);
+    }
+
+    @Override
+    public List<DailyCheckin> getCheckinHistory(Long userId) {
+        return dailyCheckinMapper.findByUserId(userId);
     }
 
     private int calculateContinuousDays(Long userId) {

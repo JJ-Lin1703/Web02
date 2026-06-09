@@ -1,5 +1,5 @@
 <template>
-  <el-container style="height: 100vh; background: var(--bg)">
+  <el-container style="min-height: 100vh; background: var(--bg)">
     <el-header class="header">
       <div class="logo">
         <el-icon class="logo-icon" size="28"><Cherry /></el-icon>
@@ -28,7 +28,7 @@
       </div>
     </el-header>
 
-    <el-container>
+    <div class="content-wrapper">
       <el-aside width="240px" class="aside">
         <el-menu
           :default-active="$route.path"
@@ -70,7 +70,7 @@
       <el-main class="main">
         <router-view />
       </el-main>
-    </el-container>
+    </div>
 
     <el-dialog v-model="passwordDialogVisible" title="修改密码" width="520px" top="15%">
       <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="100px">
@@ -380,7 +380,11 @@ onMounted(() => {
   padding: 0 30px;
   height: 65px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-  z-index: 99;
+  z-index: 100;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .logo {
@@ -431,9 +435,22 @@ onMounted(() => {
   }
 }
 
+.content-wrapper {
+  display: flex;
+  padding-top: 65px;
+  min-height: 100vh;
+}
+
 .aside {
   background: #1f2937;
   border-right: 1px solid #374151;
+  position: fixed;
+  top: 65px;
+  left: 0;
+  width: 240px;
+  height: calc(100vh - 65px);
+  overflow-y: auto;
+  z-index: 99;
 }
 
 .menu {
@@ -466,7 +483,8 @@ onMounted(() => {
 .main {
   background: var(--bg);
   padding: 24px;
-  overflow: auto;
+  margin-left: 240px;
+  flex: 1;
 }
 
 .modal-overlay {

@@ -63,6 +63,7 @@ public class DashScopeServiceImpl implements DashScopeService {
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("result_format", "message");
+            parameters.put("max_tokens", 3000);
             requestBody.put("parameters", parameters);
 
             String jsonBody = objectMapper.writeValueAsString(requestBody);

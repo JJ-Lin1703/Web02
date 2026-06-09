@@ -43,4 +43,10 @@ public class CheckinController {
         
         return ApiResponse.success(result);
     }
+
+    @GetMapping("/history")
+    public ApiResponse<?> getCheckinHistory(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        return ApiResponse.success(checkinService.getCheckinHistory(userId));
+    }
 }
