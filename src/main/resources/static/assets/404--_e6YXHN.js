@@ -1,1 +1,0 @@
-import{d as e,f as t,m as n,v as r}from"./index-D75hIICk.js";var i={},a={class:`page`};function o(e,i){return r(),n(`div`,a,[...i[0]||=[t(`h1`,null,`404`,-1),t(`p`,null,`页面不存在`,-1)]])}var s=e(i,[[`render`,o],[`__scopeId`,`data-v-654123b0`]]);export{s as default};

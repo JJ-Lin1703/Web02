@@ -5,7 +5,7 @@
         <el-card>
           <template #header>
             <div class="card-header">
-              <span>记录体重</span>
+<span class="card-title">记录体重</span>
             </div>
           </template>
           <el-form :inline="true" :model="weightForm" class="weight-form">
@@ -24,7 +24,7 @@
         <el-card style="margin-top: 16px">
           <template #header>
             <div class="card-header">
-              <span>体重历史</span>
+<span class="card-title">体重历史</span>
               <div class="search-bar">
                 <el-date-picker
                   v-model="searchForm.startDate"
@@ -41,10 +41,12 @@
                   value-format="YYYY-MM-DD"
                   style="width: 150px"
                 />
-                <el-select v-model="searchForm.sortBy" placeholder="排序方式" style="width: 140px; margin-left: 12px" clearable>
-                  <el-option label="默认" value="" />
+                <el-select v-model="searchForm.sortBy" placeholder="排序方式" style="width: 140px; margin-left: 12px" clearable @change="fetchWeightHistory">
+                  <el-option label="默认(日期倒序)" value="" />
                   <el-option label="日期升序" value="recordDate" />
+                  <el-option label="日期倒序" value="recordDateDesc" />
                   <el-option label="体重升序" value="weight" />
+                  <el-option label="体重降序" value="weightDesc" />
                 </el-select>
                 <el-button type="primary" @click="fetchWeightHistory" style="margin-left: 12px">搜索</el-button>
                 <el-button @click="resetSearch">重置</el-button>
@@ -65,8 +67,40 @@
             </el-table-column>
             <el-table-column label="操作" width="180">
               <template #default="{ row }">
-                <el-button type="primary" size="small" @click="handleEditWeight(row)">修改</el-button>
-                <el-button type="danger" size="small" @click="handleDeleteWeight(row.id)">删除</el-button>
+<el-button type="primary" @click="handleEditWeight(row)">修改</el-button>
+                <el-button type="danger" @click="handleDeleteWeight(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="AI计划历史" name="ai-plan">
+        <el-card>
+          <template #header>
+            <div class="card-header">
+              <span class="card-title">AI计划历史</span>
+              <div class="search-bar">
+                <el-select v-model="planSortBy" placeholder="排序方式" style="width: 140px" clearable @change="fetchAiPlanHistory">
+                  <el-option label="生成时间倒序" value="desc" />
+                  <el-option label="生成时间正序" value="asc" />
+                </el-select>
+              </div>
+            </div>
+          </template>
+          <el-table :data="aiPlanHistory" stripe v-loading="aiPlanLoading" empty-text="暂无AI计划记录">
+            <el-table-column prop="planTitle" label="计划标题" width="200" />
+            <el-table-column prop="versionNo" label="版本" width="80" />
+            <el-table-column prop="totalCalorie" label="每日热量(kcal)" width="120" />
+            <el-table-column prop="generateTime" label="生成时间" width="200">
+              <template #default="{ row }">
+                {{ formatDateTime(row.generateTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150">
+              <template #default="{ row }">
+                <el-button link @click="showPlanDetail(row)">查看</el-button>
+                <el-button type="danger" link @click="handleDeletePlan(row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -76,7 +110,7 @@
       <el-tab-pane label="签到记录" name="checkin">
         <el-card>
           <template #header>
-            <span>签到历史</span>
+<span class="card-title">签到历史</span>
           </template>
           <el-table :data="checkinHistory" stripe v-loading="checkinLoading" empty-text="暂无签到记录">
             <el-table-column prop="checkinDate" label="签到日期" width="150">
@@ -109,13 +143,32 @@
         <el-button type="primary" @click="handleConfirmEdit" :loading="editLoading">确认</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="planDetailVisible" title="AI计划详情" width="600px">
+      <div class="plan-detail-content">
+        <div class="plan-info">
+          <h3>{{ selectedPlan?.planTitle }}</h3>
+          <div class="plan-meta">
+            <span>版本：V{{ selectedPlan?.versionNo }}</span>
+            <span>每日热量：{{ selectedPlan?.totalCalorie }} kcal</span>
+            <span>生成时间：{{ formatDateTime(selectedPlan?.generateTime) }}</span>
+          </div>
+        </div>
+        <div class="plan-content">
+          <pre>{{ formatPlanContent(selectedPlan?.planContent) }}</pre>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="planDetailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCheckinHistory, getWeightHistory, recordWeight, deleteWeightRecord, updateWeightRecord } from '@/api/user'
+import { getCheckinHistory, getWeightHistory, recordWeight, deleteWeightRecord, updateWeightRecord, getAiPlanHistory, deleteAiPlan } from '@/api/user'
 
 const activeTab = ref('weight')
 
@@ -131,6 +184,12 @@ const weightTableLoading = ref(false)
 const checkinHistory = ref([])
 const checkinLoading = ref(false)
 
+const aiPlanHistory = ref([])
+const aiPlanLoading = ref(false)
+const planSortBy = ref('desc')
+
+const planDetailVisible = ref(false)
+const selectedPlan = ref(null)
 const editDialogVisible = ref(false)
 const editLoading = ref(false)
 const editForm = reactive({
@@ -236,11 +295,44 @@ const fetchCheckinHistory = async () => {
   }
 }
 
+const fetchAiPlanHistory = async () => {
+  aiPlanLoading.value = true
+  try {
+    const res = await getAiPlanHistory()
+    let data = res.data || []
+    if (planSortBy.value === 'asc') {
+      data = data.reverse()
+    }
+    aiPlanHistory.value = data
+  } finally {
+    aiPlanLoading.value = false
+  }
+}
+
+const showPlanDetail = (row) => {
+  selectedPlan.value = row
+  planDetailVisible.value = true
+}
+
+const handleDeletePlan = async (id) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这个AI计划吗？', '提示', {
+      type: 'warning'
+    })
+    await deleteAiPlan(id)
+    ElMessage.success('删除成功')
+    await fetchAiPlanHistory()
+  } catch {
+    // 取消或错误均由拦截器处理
+  }
+}
 const handleTabChange = (name) => {
   if (name === 'weight') {
     fetchWeightHistory()
   } else if (name === 'checkin') {
     fetchCheckinHistory()
+  } else if (name === 'ai-plan') {
+    fetchAiPlanHistory()
   }
 }
 
@@ -256,6 +348,23 @@ const formatTime = (timeStr) => {
   return date.toLocaleString('zh-CN')
 }
 
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-CN')
+}
+
+const formatPlanContent = (content) => {
+  if (!content)
+    return '';
+  
+  try {
+    const obj = JSON.parse(content);
+    return JSON.stringify(obj, null, 2);
+  } catch {
+    return content;
+  }
+}
 onMounted(() => {
   fetchWeightHistory()
 })
@@ -275,5 +384,49 @@ onMounted(() => {
 .weight-form {
   display: flex;
   align-items: flex-end;
+}
+
+.search-bar {
+  font-size: 16px;
+}
+
+.plan-detail-content {
+  padding: 10px;
+}
+
+.plan-info {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.plan-info h3 {
+  margin: 0 0 10px 0;
+  color: #303133;
+}
+
+.plan-meta {
+  display: flex;
+  gap: 20px;
+  color: #909399;
+  font-size: 14px;
+}
+
+.plan-content {
+  background: #f5f7fa;
+  border-radius: 4px;
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.plan-content pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #303133;
 }
 </style>

@@ -161,8 +161,8 @@ public class UserHealthServiceImpl implements UserHealthService {
         BigDecimal activityFactor;
         switch (activityLevel) {
             case 1 -> activityFactor = BigDecimal.valueOf(1.2);
-            case 2 -> activityFactor = BigDecimal.valueOf(1.55);
-            case 3 -> activityFactor = BigDecimal.valueOf(1.9);
+            case 2 -> activityFactor = BigDecimal.valueOf(1.375);
+            case 3 -> activityFactor = BigDecimal.valueOf(1.55);
             default -> activityFactor = BigDecimal.valueOf(1.2);
         }
 

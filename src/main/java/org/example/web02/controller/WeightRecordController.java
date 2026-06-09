@@ -61,4 +61,11 @@ public class WeightRecordController {
         weightRecordService.updateWeight(userId, id, weight);
         return ApiResponse.success("体重更新成功");
     }
+
+    @GetMapping("/trend")
+    public ApiResponse<List<WeightRecord>> getWeightTrend(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        List<WeightRecord> trend = weightRecordService.getRecent30DaysWeight(userId);
+        return ApiResponse.success(trend);
+    }
 }

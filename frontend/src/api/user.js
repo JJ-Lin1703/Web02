@@ -127,3 +127,39 @@ export const updateWeightRecord = (id, data) => {
     data
   })
 }
+
+export const getWeightTrend = () => {
+  return request({
+    url: '/weight-record/trend',
+    method: 'get'
+  })
+}
+
+export const generateAiPlan = () => {
+  return request({
+    url: '/ai-plan/generate',
+    method: 'post',
+    timeout: 60000
+  })
+}
+
+export const getAiPlanHistory = () => {
+  return request({
+    url: '/ai-plan/history',
+    method: 'get'
+  })
+}
+
+export const getLatestAiPlan = () => {
+  return request({
+    url: '/ai-plan/latest',
+    method: 'get'
+  })
+}
+
+export const deleteAiPlan = (id) => {
+  return request({
+    url: `/ai-plan/${id}`,
+    method: 'delete'
+  })
+}

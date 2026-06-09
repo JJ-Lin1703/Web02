@@ -3,83 +3,92 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>体重变化趋势</span>
+          <span>体重趋势图</span>
           <div class="filter-bar">
             <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              v-model="startDate"
+              type="date"
+              placeholder="开始日期"
               value-format="YYYY-MM-DD"
-              style="width: 260px"
+              style="width: 150px"
             />
-            <el-button type="primary" @click="fetchChartData" style="margin-left: 12px">查询</el-button>
+            <span style="margin: 0 8px">至</span>
+            <el-date-picker
+              v-model="endDate"
+              type="date"
+              placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              style="width: 150px"
+            />
+            <el-button type="primary" @click="fetchData" style="margin-left: 12px">查询</el-button>
           </div>
         </div>
       </template>
-      <div ref="chartRef" class="chart-wrapper" v-loading="loading"></div>
+      <div ref="chartRef" class="chart-container" v-loading="loading"></div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { getWeightHistory } from '@/api/user'
 
 const chartRef = ref(null)
 const loading = ref(false)
-const dateRange = ref(null)
+const startDate = ref(null)
+const endDate = ref(null)
 let chartInstance = null
 
-const fetchChartData = async () => {
+const fetchData = async () => {
   loading.value = true
   try {
     const params = {}
-    if (dateRange.value) {
-      params.startDate = dateRange.value[0]
-      params.endDate = dateRange.value[1]
-    }
+    if (startDate.value) params.startDate = startDate.value
+    if (endDate.value) params.endDate = endDate.value
     params.sortBy = 'recordDate'
+    
     const res = await getWeightHistory(params)
     const data = res.data || []
+    
     if (data.length === 0) {
       renderEmptyChart()
     } else {
       renderChart(data)
     }
+  } catch {
+    // 错误已在拦截器处理
   } finally {
     loading.value = false
   }
 }
 
 const renderChart = (data) => {
+  if (!chartRef.value) return
+  
+  const dates = data.map(item => {
+    const date = new Date(item.recordDate)
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  })
+  const weights = data.map(item => item.weight)
+
   if (!chartInstance) {
     chartInstance = echarts.init(chartRef.value)
   }
-  if (data.length === 0) {
-    renderEmptyChart()
-    return
-  }
 
-  const dates = data.map(item => item.recordDate).reverse()
-  const weights = data.map(item => item.weight).reverse()
-
-  chartInstance.setOption({
+  const option = {
     tooltip: {
       trigger: 'axis',
       formatter: (params) => {
-        const p = params[0]
-        return `${p.axisValue}<br/>体重：${p.value} kg`
+        const { dataIndex, value } = params[0]
+        return `${dates[dataIndex]}<br/>体重: ${value} kg`
       }
     },
     xAxis: {
       type: 'category',
       data: dates,
       axisLabel: {
-        rotate: 45,
-        formatter: (value) => value?.slice(0, 10) || value
+        rotate: 45
       }
     },
     yAxis: {
@@ -87,12 +96,6 @@ const renderChart = (data) => {
       name: '体重 (kg)',
       min: (value) => Math.floor(value.min - 2),
       max: (value) => Math.ceil(value.max + 2)
-    },
-    grid: {
-      left: 60,
-      right: 30,
-      bottom: 80,
-      top: 30
     },
     series: [
       {
@@ -102,59 +105,71 @@ const renderChart = (data) => {
         smooth: true,
         symbol: 'circle',
         symbolSize: 8,
-        lineStyle: { color: '#409eff', width: 2 },
-        itemStyle: { color: '#409eff' },
+        lineStyle: {
+          width: 3,
+          color: '#409eff'
+        },
+        itemStyle: {
+          color: '#409eff'
+        },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
             { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
           ])
-        },
-        markLine: {
-          silent: true,
-          lineStyle: { type: 'dashed', color: '#909399' },
-          label: { formatter: '平均 {c} kg' },
-          data: [
-            {
-              type: 'average',
-              name: '平均值'
-            }
-          ]
         }
       }
-    ]
-  })
+    ],
+    grid: {
+      left: '10%',
+      right: '10%',
+      bottom: '15%',
+      top: '10%'
+    }
+  }
+
+  chartInstance.setOption(option)
 }
 
 const renderEmptyChart = () => {
+  if (!chartRef.value) return
+  
   if (!chartInstance) {
     chartInstance = echarts.init(chartRef.value)
   }
+
   chartInstance.setOption({
     title: {
-      text: '暂无体重记录',
+      text: '暂无体重数据',
       left: 'center',
       top: 'center',
-      textStyle: { color: '#909399', fontSize: 16 }
+      textStyle: {
+        color: '#909399',
+        fontSize: 14
+      }
     },
     xAxis: { show: false },
-    yAxis: { show: false },
-    series: []
+    yAxis: { show: false }
   })
 }
 
 const handleResize = () => {
-  chartInstance?.resize()
+  if (chartInstance) {
+    chartInstance.resize()
+  }
 }
 
-onMounted(() => {
-  fetchChartData()
+onMounted(async () => {
+  await nextTick()
+  fetchData()
   window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
+  if (chartInstance) {
+    chartInstance.dispose()
+  }
   window.removeEventListener('resize', handleResize)
-  chartInstance?.dispose()
 })
 </script>
 
@@ -176,7 +191,7 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.chart-wrapper {
+.chart-container {
   width: 100%;
   height: 450px;
 }

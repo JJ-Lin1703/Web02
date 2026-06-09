@@ -26,4 +26,6 @@ public interface WeightRecordMapper {
     WeightRecord findByUserIdAndDate(@Param("userId") Long userId, @Param("recordDate") Date recordDate);
 
     int deleteById(@Param("id") Long id);
+
+    List<WeightRecord> findRecent30DaysWeight(@Param("userId") Long userId);
 }

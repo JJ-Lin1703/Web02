@@ -38,10 +38,20 @@
         </where>
         <choose>
             <when test="sortBy == 'weight'">ORDER BY weight ASC</when>
-            <otherwise>ORDER BY record_date ASC</otherwise>
+            <when test="sortBy == 'weightDesc'">ORDER BY weight DESC</when>
+            <when test="sortBy == 'recordDate'">ORDER BY record_date ASC</when>
+            <when test="sortBy == 'recordDateDesc'">ORDER BY record_date DESC</when>
+            <otherwise>ORDER BY record_date DESC</otherwise>
         </choose>
     </select>
 
+    <select id="findRecent30DaysWeight" resultMap="WeightRecordResultMap">
+        SELECT * FROM weight_record
+        WHERE user_id = #{userId} 
+          AND is_deleted = 0 
+          AND record_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        ORDER BY record_date ASC
+    </select>
     <select id="findById" resultMap="WeightRecordResultMap">
         SELECT * FROM weight_record WHERE id = #{id} AND is_deleted = 0
     </select>

@@ -81,4 +81,9 @@ public class WeightRecordServiceImpl implements WeightRecordService {
         record.setWeight(weight);
         weightRecordMapper.update(record);
     }
+
+    @Override
+    public List<WeightRecord> getRecent30DaysWeight(Long userId) {
+        return weightRecordMapper.findRecent30DaysWeight(userId);
+    }
 }

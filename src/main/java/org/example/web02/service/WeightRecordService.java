@@ -16,4 +16,6 @@ public interface WeightRecordService {
     void deleteWeightRecord(Long userId, Long recordId);
 
     void updateWeight(Long userId, Long recordId, BigDecimal weight);
+
+    List<WeightRecord> getRecent30DaysWeight(Long userId);
 }

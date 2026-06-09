@@ -90,6 +90,11 @@ public class CheckinServiceImpl implements CheckinService {
         return dailyCheckinMapper.countByUserIdAndDateRange(userId, startDate, endDate);
     }
 
+    @Override
+    public List<DailyCheckin> getCheckinHistory(Long userId) {
+        return dailyCheckinMapper.findByUserId(userId);
+    }
+
     private int calculateContinuousDays(Long userId) {
         LocalDate today = LocalDate.now();
         int continuousDays = 1;
