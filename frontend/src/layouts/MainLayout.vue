@@ -5,12 +5,23 @@
         <el-icon class="logo-icon" size="28"><Cherry /></el-icon>
         <span class="logo-text">智能健康助手</span>
       </div>
-      <div class="user-info">
+      <div class="header-right">
+        <div class="checkin-btn-wrapper">
+          <div v-if="checkinStatus.checkedInToday" class="checkin-btn done">
+            <el-icon :size="20" color="#67c23a"><CircleCheck /></el-icon>
+            <span>已签到</span>
+          </div>
+          <div v-else class="checkin-btn" @click="handleCheckin">
+            <el-icon v-if="!checkinLoading" :size="20" color="#fff"><CircleCheck /></el-icon>
+            <el-icon v-else :size="20" color="#fff" class="is-loading"><Loading /></el-icon>
+            <span>{{ checkinLoading ? '签到中...' : '签到' }}</span>
+          </div>
+        </div>
         <el-dropdown @command="handleCommand">
           <span class="el-dropdown-link">
-            <el-icon class="user-icon" size="20"><User /></el-icon>
+            <el-icon class="user-icon" size="24"><User /></el-icon>
             <span class="username">{{ userStore.userInfo?.username }}</span>
-            <el-icon class="el-icon--right" size="16"><ArrowDown /></el-icon>
+            <el-icon class="el-icon--right" size="20"><ArrowDown /></el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -39,29 +50,29 @@
           :active-text-color="menuActiveText"
           unique-opened
         >
-<el-menu-item index="/">
-            <el-icon size="20"><House /></el-icon>
+          <el-menu-item index="/">
+            <el-icon size="24"><House /></el-icon>
             <span>首页工作台</span>
           </el-menu-item>
           <el-menu-item index="/record">
-            <el-icon size="20"><Document /></el-icon>
+            <el-icon size="24"><Document /></el-icon>
             <span>健康档案</span>
           </el-menu-item>
           
           <el-menu-item index="/ai-plan">
-            <el-icon size="20"><MagicStick /></el-icon>
+            <el-icon size="24"><MagicStick /></el-icon>
             <span>AI健康计划</span>
           </el-menu-item>
           <el-menu-item index="/history">
-            <el-icon size="20"><Refresh /></el-icon>
+            <el-icon size="24"><Refresh /></el-icon>
             <span>历史记录</span>
           </el-menu-item>
           <el-menu-item index="/chart">
-            <el-icon size="20"><Histogram /></el-icon>
+            <el-icon size="24"><Histogram /></el-icon>
             <span>数据可视化</span>
           </el-menu-item>
           <el-menu-item v-if="userStore.isAdmin()" index="/admin">
-            <el-icon size="20"><Setting /></el-icon>
+            <el-icon size="24"><Setting /></el-icon>
             <span>管理员后台</span>
           </el-menu-item>
         </el-menu>
@@ -199,9 +210,9 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refresh, Histogram, Setting } from '@element-plus/icons-vue'
+import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refresh, Histogram, Setting, CircleCheck, Loading } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { changePassword, checkHealthRecordExists, createHealthRecord } from '@/api/user'
+import { changePassword, checkHealthRecordExists, createHealthRecord, getCheckinStatus, dailyCheckin } from '@/api/user'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -209,6 +220,11 @@ const userStore = useUserStore()
 const menuBg = computed(() => '#26B5B5')
 const menuText = computed(() => 'rgba(255,255,255,0.9)')
 const menuActiveText = computed(() => '#26B5B5')
+
+const checkinStatus = reactive({
+  checkedInToday: false
+})
+const checkinLoading = ref(false)
 
 const passwordDialogVisible = ref(false)
 const passwordFormRef = ref(null)
@@ -349,6 +365,28 @@ const handleCommand = async (command) => {
   }
 }
 
+const fetchCheckinStatus = async () => {
+  try {
+    const res = await getCheckinStatus()
+    checkinStatus.checkedInToday = res.data.checkedInToday
+  } catch {
+  }
+}
+
+const handleCheckin = async () => {
+  if (checkinLoading.value) return
+  checkinLoading.value = true
+  try {
+    await dailyCheckin()
+    ElMessage.success('签到成功')
+    checkinStatus.checkedInToday = true
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '签到失败')
+  } finally {
+    checkinLoading.value = false
+  }
+}
+
 const handleChangePassword = async () => {
   try {
     await passwordFormRef.value.validate()
@@ -368,6 +406,7 @@ const handleChangePassword = async () => {
 
 onMounted(() => {
   checkAndShowHealthRecordModal()
+  fetchCheckinStatus()
 })
 </script>
 
@@ -401,15 +440,53 @@ onMounted(() => {
 }
 
 .logo-text {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: #2c3e50;
   letter-spacing: 0.5px;
 }
 
-.user-info {
+.header-right {
   display: flex;
   align-items: center;
+  gap: 20px;
+}
+
+.checkin-btn-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.checkin-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #5b9bd5 0%, #7ab8e3 100%);
+  border-radius: 30px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(91, 155, 213, 0.3);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(91, 155, 213, 0.4);
+  }
+  
+  &.done {
+    background: rgba(103, 194, 58, 0.1);
+    color: #67c23a;
+    box-shadow: none;
+    cursor: default;
+    
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
 }
 
 .user-icon {
@@ -417,9 +494,10 @@ onMounted(() => {
 }
 
 .username {
-  margin: 0 8px;
-  font-size: 15px;
+  margin: 0 10px;
+  font-size: 17px;
   color: #475569;
+  font-weight: 500;
 }
 
 .el-dropdown-link {
@@ -466,10 +544,10 @@ onMounted(() => {
 }
 
 .menu :deep(.el-menu-item) {
-  margin: 6px 16px;
+  margin: 8px 16px;
   border-radius: 30px;
-  padding: 16px 8px;
-  font-size: 13px;
+  padding: 18px 10px;
+  font-size: 16px;
   color: rgba(255, 255, 255, 0.9);
   transition: all 0.25s ease;
   font-weight: 500;
@@ -477,7 +555,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   height: auto;
   line-height: 1.3;
 }

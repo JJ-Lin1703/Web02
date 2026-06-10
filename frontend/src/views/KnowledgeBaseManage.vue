@@ -70,18 +70,18 @@
 
         <el-form-item label="关联标签" prop="selectedTags">
           <div class="tag-group-panel">
-            <div v-for="(tags, groupName) in tagPool" :key="groupName" class="tag-group">
-              <div class="tag-group-label">{{ groupName }}</div>
-              <div class="tag-group-items">
-                <el-checkbox
-                  v-for="tag in tags"
-                  :key="tag"
-                  :label="tag"
-                  :model-value="form.selectedTags"
-                  @change="(checked) => onTagToggle(tag, checked)"
-                >{{ tag }}</el-checkbox>
+            <el-checkbox-group v-model="form.selectedTags">
+              <div v-for="(tags, groupName) in tagPool" :key="groupName" class="tag-group">
+                <div class="tag-group-label">{{ groupName }}</div>
+                <div class="tag-group-items">
+                  <el-checkbox
+                    v-for="tag in tags"
+                    :key="tag"
+                    :value="tag"
+                  >{{ tag }}</el-checkbox>
+                </div>
               </div>
-            </div>
+            </el-checkbox-group>
           </div>
           <div v-if="form.selectedTags.length > 0" class="selected-tags-preview">
             已选：<el-tag v-for="t in form.selectedTags" :key="t" size="small" class="tag-item">{{ t }}</el-tag>
@@ -135,18 +135,6 @@ const rules = {
 const parseTags = (tags) => {
   if (!tags) return []
   return tags.split(/[,，]/).map(t => t.trim()).filter(Boolean)
-}
-
-// 标签勾选/取消
-const onTagToggle = (tag, checked) => {
-  if (checked) {
-    if (!form.selectedTags.includes(tag)) {
-      form.selectedTags.push(tag)
-    }
-  } else {
-    const idx = form.selectedTags.indexOf(tag)
-    if (idx > -1) form.selectedTags.splice(idx, 1)
-  }
 }
 
 // 加载标签池
