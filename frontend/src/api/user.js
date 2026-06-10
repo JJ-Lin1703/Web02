@@ -349,3 +349,61 @@ export const deleteDictLabel = (id) => {
     method: 'delete'
   })
 }
+
+/** ==================== 向量RAG ==================== */
+
+/** 上传PDF文档（Base64编码，绕过multipart） */
+export const uploadPdfDoc = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target.result.split(',')[1] // 去掉 data:xxx;base64, 前缀
+      const token = useUserStore().token
+      axios.post('http://localhost:8081/api/doc-rag/upload', {
+        fileName: file.name,
+        fileContent: base64
+      }, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        timeout: 120000
+      }).then(res => {
+        resolve({ data: res.data })
+      }).catch(reject)
+    }
+    reader.onerror = () => reject(new Error('文件读取失败'))
+    reader.readAsDataURL(file)
+  })
+}
+
+/** 文档问答 */
+export const docAsk = (question, sessionId) => {
+  return request({
+    url: '/doc-rag/ask',
+    method: 'post',
+    data: { question, sessionId },
+    timeout: 60000
+  })
+}
+
+/** 获取已上传文档列表 */
+export const listDocRagDocs = () => {
+  return request({
+    url: '/doc-rag/docs',
+    method: 'get'
+  })
+}
+
+/** 获取历史会话列表 */
+export const listConversations = () => {
+  return request({
+    url: '/doc-rag/conversations',
+    method: 'get'
+  })
+}
+
+/** 获取指定会话的消息 */
+export const getConversation = (sessionId) => {
+  return request({
+    url: `/doc-rag/conversations/${sessionId}`,
+    method: 'get'
+  })
+}

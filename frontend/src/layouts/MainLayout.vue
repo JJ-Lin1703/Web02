@@ -71,6 +71,10 @@
             <el-icon size="24"><Histogram /></el-icon>
             <span>数据可视化</span>
           </el-menu-item>
+          <el-menu-item index="/doc-qa">
+            <el-icon size="24"><ChatDotRound /></el-icon>
+            <span>智能问答</span>
+          </el-menu-item>
           <el-menu-item v-if="userStore.isAdmin()" index="/admin">
             <el-icon size="24"><Setting /></el-icon>
             <span>管理员后台</span>
@@ -210,7 +214,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refresh, Histogram, Setting, CircleCheck, Loading } from '@element-plus/icons-vue'
+import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refresh, Histogram, Setting, CircleCheck, Loading, ChatDotRound } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { changePassword, checkHealthRecordExists, createHealthRecord, getCheckinStatus, dailyCheckin } from '@/api/user'
 

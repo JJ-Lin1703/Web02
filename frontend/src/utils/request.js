@@ -23,7 +23,8 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => {
     const res = response.data
-    if (res.code === 200) {
+    // 兼容有 code 字段和无 code 字段两种返回格式
+    if (res.code === undefined || res.code === 200) {
       return res
     } else {
       ElMessage.error(res.message || '请求失败')
@@ -36,7 +37,8 @@ request.interceptors.response.use(
       userStore.logout()
       window.location.href = '/login'
     }
-    const msg = error.response?.data?.message || error.message || '网络错误'
+    // 优先使用后端返回的 error 或 message 字段
+    const msg = error.response?.data?.error || error.response?.data?.message || error.message || '网络错误'
     ElMessage.error(msg)
     return Promise.reject(error)
   }

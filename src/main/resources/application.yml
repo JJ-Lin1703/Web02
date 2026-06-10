@@ -5,6 +5,8 @@ server:
     connection-timeout: 180000
     accept-count: 100
     max-connections: 10000
+    max-swallow-size: -1
+    max-http-form-post-size: -1
     threads:
       max: 200
       min-spare: 10
@@ -15,10 +17,14 @@ spring:
   mvc:
     async:
       request-timeout: 180000
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   datasource:
     url: jdbc:mysql://localhost:3306/smart_health_helper?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: ljj20051101
+    password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10

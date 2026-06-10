@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.web02.mapper.AiConversationMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.web02.entity.AiConversation">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="session_id" property="sessionId"/>
+        <result column="question" property="question"/>
+        <result column="answer" property="answer"/>
+        <result column="doc_based" property="docBased"/>
+        <result column="create_time" property="createTime"/>
+        <result column="is_deleted" property="isDeleted"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ai_conversation (user_id, session_id, question, answer, doc_based, create_time, is_deleted)
+        VALUES (#{userId}, #{sessionId}, #{question}, #{answer}, #{docBased}, NOW(), 0)
+    </insert>
+
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT * FROM ai_conversation
+        WHERE user_id = #{userId} AND is_deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="findBySessionId" resultMap="BaseResultMap">
+        SELECT * FROM ai_conversation
+        WHERE session_id = #{sessionId} AND is_deleted = 0
+        ORDER BY create_time ASC
+    </select>
+
+    <select id="findSessionsByUserId" resultMap="BaseResultMap">
+        SELECT session_id, create_time, question
+        FROM ai_conversation
+        WHERE id IN (
+            SELECT MIN(id) FROM ai_conversation
+            WHERE user_id = #{userId} AND is_deleted = 0
+            GROUP BY session_id
+        )
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
