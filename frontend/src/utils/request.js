@@ -13,6 +13,12 @@ request.interceptors.request.use(
     if (userStore.token) {
       config.headers.Authorization = `Bearer ${userStore.token}`
     }
+    
+    const apiKey = localStorage.getItem('dashscope_api_key')
+    if (apiKey) {
+      config.headers['X-DashScope-API-Key'] = apiKey
+    }
+    
     return config
   },
   (error) => {

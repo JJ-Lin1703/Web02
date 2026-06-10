@@ -2,6 +2,7 @@ package org.example.web02.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.web02.dto.request.TweakPlanRequest;
+import org.example.web02.dto.response.PageResult;
 import org.example.web02.entity.AiPlan;
 import org.example.web02.entity.UserHealth;
 import org.example.web02.exception.BusinessException;
@@ -41,12 +42,17 @@ public class AiPlanServiceImpl implements AiPlanService {
     @Override
     @Transactional
     public AiPlan generatePlan(Long userId) {
+        return generatePlan(userId, null);
+    }
+
+    @Transactional
+    public AiPlan generatePlan(Long userId, String apiKey) {
         UserHealth health = userHealthMapper.findByUserId(userId);
         if (health == null) {
             throw new BusinessException("请先完善健康档案信息");
         }
 
-        Map<String, Object> planResult = dashScopeService.generateHealthPlan(userId);
+        Map<String, Object> planResult = dashScopeService.generateHealthPlan(userId, apiKey);
 
         AiPlan latestPlan = aiPlanMapper.findLatestByUserId(userId);
         int versionNo = (latestPlan != null) ? latestPlan.getVersionNo() + 1 : 1;
@@ -74,6 +80,12 @@ public class AiPlanServiceImpl implements AiPlanService {
     @Override
     @Transactional
     public AiPlan tweakPlan(Long userId, TweakPlanRequest request) {
+        return tweakPlan(userId, request, null);
+    }
+
+    @Override
+    @Transactional
+    public AiPlan tweakPlan(Long userId, TweakPlanRequest request, String apiKey) {
         AiPlan oldPlan = aiPlanMapper.findById(request.getPlanId());
         if (oldPlan == null || !oldPlan.getUserId().equals(userId)) {
             throw new BusinessException("计划不存在或无权修改");
@@ -84,11 +96,9 @@ public class AiPlanServiceImpl implements AiPlanService {
             throw new BusinessException("请先完善健康档案信息");
         }
 
-        // 构造微调 prompt
         StringBuilder prompt = new StringBuilder();
         prompt.append("你是一名专业营养师+持证健身教练。\n\n");
 
-        // 重新跑 RAG 检索相关知识
         List<org.example.web02.entity.KnowledgeBase> ragKnowledge = knowledgeBaseService.retrieveRelevantKnowledge(userId);
         if (ragKnowledge != null && !ragKnowledge.isEmpty()) {
             prompt.append("【权威健康知识库参考】\n");
@@ -124,8 +134,13 @@ public class AiPlanServiceImpl implements AiPlanService {
         prompt.append("\n\n");
         prompt.append("请输出完整的修改后 JSON，不要省略任何内容，不要加任何解释：");
 
-        String response = dashScopeService.generateText(prompt.toString(), 8000);
-        String jsonStr = extractPlanJsonFromResponse(response);
+        String jsonStr = null;
+        try {
+            String response = dashScopeService.generateText(prompt.toString(), 8000, apiKey);
+            jsonStr = extractPlanJsonFromResponse(response);
+        } catch (Exception e) {
+            throw new BusinessException("AI服务调用失败：" + e.getMessage());
+        }
 
         if (jsonStr == null || jsonStr.isEmpty()) {
             throw new BusinessException("AI微调失败：无法解析返回的JSON");
@@ -165,6 +180,14 @@ public class AiPlanServiceImpl implements AiPlanService {
     }
 
     @Override
+    public PageResult<AiPlan> getPlanHistoryPaginated(Long userId, int pageNum, int pageSize) {
+        long offset = (long) (pageNum - 1) * pageSize;
+        List<AiPlan> records = aiPlanMapper.findByUserIdPaginated(userId, offset, pageSize);
+        long total = aiPlanMapper.countByUserId(userId);
+        return PageResult.of(records, total, pageNum, pageSize);
+    }
+
+    @Override
     public AiPlan getLatestPlan(Long userId) {
         return aiPlanMapper.findLatestByUserId(userId);
     }
@@ -180,5 +203,23 @@ public class AiPlanServiceImpl implements AiPlanService {
             throw new BusinessException("无权删除此计划");
         }
         aiPlanMapper.deleteById(planId);
+    }
+
+    @Override
+    @Transactional
+    public AiPlan updatePlanContent(Long userId, Long planId, String planContent) {
+        AiPlan plan = aiPlanMapper.findById(planId);
+        if (plan == null) {
+            throw new BusinessException("计划不存在");
+        }
+        if (!plan.getUserId().equals(userId)) {
+            throw new BusinessException("无权修改此计划");
+        }
+        
+        plan.setPlanContent(planContent);
+        plan.setUpdateTime(new Date());
+        aiPlanMapper.updateById(plan);
+        
+        return plan;
     }
 }

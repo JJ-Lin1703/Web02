@@ -69,4 +69,7 @@
         WHERE id = #{id} AND is_deleted = 0
     </update>
 
+    <select id="findAllActiveUserIds" resultType="Long">
+        SELECT id FROM user WHERE is_deleted = 0
+    </select>
 </mapper>

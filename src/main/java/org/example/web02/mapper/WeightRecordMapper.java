@@ -21,6 +21,17 @@ public interface WeightRecordMapper {
                                                @Param("endDate") Date endDate,
                                                @Param("sortBy") String sortBy);
 
+    List<WeightRecord> findByUserIdWithFilterPaginated(@Param("userId") Long userId,
+                                                        @Param("startDate") Date startDate,
+                                                        @Param("endDate") Date endDate,
+                                                        @Param("sortBy") String sortBy,
+                                                        @Param("offset") long offset,
+                                                        @Param("limit") long limit);
+
+    long countByUserIdWithFilter(@Param("userId") Long userId,
+                                  @Param("startDate") Date startDate,
+                                  @Param("endDate") Date endDate);
+
     WeightRecord findById(@Param("id") Long id);
 
     WeightRecord findByUserIdAndDate(@Param("userId") Long userId, @Param("recordDate") Date recordDate);
@@ -28,4 +39,8 @@ public interface WeightRecordMapper {
     int deleteById(@Param("id") Long id);
 
     List<WeightRecord> findRecent30DaysWeight(@Param("userId") Long userId);
+
+List<java.math.BigDecimal> getWeightsInLast7Days(@Param("userId") Long userId);
+
+    int checkTodayRecord(@Param("userId") Long userId, @Param("recordDate") Date recordDate);
 }

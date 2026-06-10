@@ -33,7 +33,7 @@ public class DashScopeServiceImpl implements DashScopeService {
     private final HttpClient httpClient;
 
     @Value("${dashscope.api-key:}")
-    private String apiKey;
+    private String defaultApiKey;
 
     public DashScopeServiceImpl(UserHealthMapper userHealthMapper,
                                 WeightRecordMapper weightRecordMapper,
@@ -50,17 +50,20 @@ public class DashScopeServiceImpl implements DashScopeService {
 
     @Override
     public String generateText(String prompt) {
-        return generateText(prompt, 3000);
+        return generateText(prompt, 3000, null);
     }
 
     @Override
     public String generateText(String prompt, int maxTokens) {
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = System.getenv("DASHSCOPE_API_KEY");
-        }
+        return generateText(prompt, maxTokens, null);
+    }
 
-        if (apiKey == null || apiKey.isEmpty()) {
-            throw new RuntimeException("未配置阿里百炼API密钥，请设置环境变量DASHSCOPE_API_KEY");
+    @Override
+    public String generateText(String prompt, int maxTokens, String apiKey) {
+        String effectiveApiKey = resolveApiKey(apiKey);
+
+        if (effectiveApiKey == null || effectiveApiKey.isEmpty()) {
+            throw new RuntimeException("未配置阿里百炼API密钥，请设置环境变量DASHSCOPE_API_KEY或在前端输入API Key");
         }
 
         try {
@@ -83,7 +86,7 @@ public class DashScopeServiceImpl implements DashScopeService {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
-                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Authorization", "Bearer " + effectiveApiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .timeout(Duration.ofSeconds(120))
@@ -121,8 +124,25 @@ public class DashScopeServiceImpl implements DashScopeService {
         }
     }
 
+    private String resolveApiKey(String requestApiKey) {
+        if (requestApiKey != null && !requestApiKey.isEmpty()) {
+            return requestApiKey;
+        }
+        
+        if (defaultApiKey != null && !defaultApiKey.isEmpty()) {
+            return defaultApiKey;
+        }
+        
+        return System.getenv("DASHSCOPE_API_KEY");
+    }
+
     @Override
     public Map<String, Object> generateHealthPlan(Long userId) {
+        return generateHealthPlan(userId, null);
+    }
+
+    @Override
+    public Map<String, Object> generateHealthPlan(Long userId, String apiKey) {
         UserHealth health = userHealthMapper.findByUserId(userId);
         if (health == null) {
             throw new RuntimeException("用户健康档案不存在，请先完善健康信息");
@@ -153,7 +173,6 @@ public class DashScopeServiceImpl implements DashScopeService {
             context.append("\n");
         }
 
-        // ==================== RAG 知识检索 ====================
         log.warn("=== RAG DEBUG: 准备检索知识库, userId={} ===", userId);
         List<KnowledgeBase> ragKnowledge = knowledgeBaseService.retrieveRelevantKnowledge(userId);
         log.warn("=== RAG DEBUG: 检索完成, 结果数量={} ===", ragKnowledge != null ? ragKnowledge.size() : 0);
@@ -201,13 +220,14 @@ public class DashScopeServiceImpl implements DashScopeService {
                 "2. 根据用户的健康目标（减肥/增肌/维持健康）调整热量摄入\n" +
                 "3. 考虑用户的饮食偏好和过敏信息\n" +
                 "4. 运动安排要符合用户的活动水平\n" +
-                "5. 每天必须提供3项运动安排，每项运动不重复";
+                "5. 每天必须提供3项运动安排，每项运动不重复，同时要求这些运动安排要符合实际且具体、细致\n" +
+                "6. 每天的饮食安排要符合实际，食材来源易获取，符合中国国内人民的饮食习惯，三餐的安排要符合中国膳食比例，讲究早上吃好、中午吃饱、晚上吃少";
 
         Map<String, Object> result = new HashMap<>();
         result.put("healthInfo", context.toString());
 
         try {
-            String response = generateText(prompt);
+            String response = generateText(prompt, 3000, apiKey);
             log.info("AI响应原始内容: {}", response);
             result.put("rawResponse", response);
 

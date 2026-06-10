@@ -1,5 +1,6 @@
 package org.example.web02.service.impl;
 
+import org.example.web02.dto.response.PageResult;
 import org.example.web02.entity.DailyCheckin;
 import org.example.web02.entity.User;
 import org.example.web02.exception.BusinessException;
@@ -67,7 +68,7 @@ public class CheckinServiceImpl implements CheckinService {
 
     @Override
     public int getTotalCheckinDays(Long userId) {
-        return dailyCheckinMapper.countByUserId(userId);
+        return (int) dailyCheckinMapper.countByUserId(userId);
     }
 
     @Override
@@ -112,5 +113,13 @@ public class CheckinServiceImpl implements CheckinService {
     @Override
     public List<DailyCheckin> getCheckinHistory(Long userId) {
         return dailyCheckinMapper.findByUserId(userId);
+    }
+
+    @Override
+    public PageResult<DailyCheckin> getCheckinHistoryPaginated(Long userId, int pageNum, int pageSize) {
+        long offset = (long) (pageNum - 1) * pageSize;
+        List<DailyCheckin> records = dailyCheckinMapper.findByUserIdPaginated(userId, offset, pageSize);
+        long total = dailyCheckinMapper.countByUserId(userId);
+        return PageResult.of(records, total, pageNum, pageSize);
     }
 }

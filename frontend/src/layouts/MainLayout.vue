@@ -6,6 +6,53 @@
         <span class="logo-text">智能健康助手</span>
       </div>
       <div class="header-right">
+        <div class="notification-wrapper" 
+             @mouseenter="openNotificationPanel" 
+             @mouseleave="closeNotificationPanel">
+          <div class="notification-btn">
+            <el-icon :size="22" color="#64748b"><Bell /></el-icon>
+            <span v-if="notificationCount > 0" class="notification-dot"></span>
+          </div>
+          
+          <div v-if="showNotificationPanel" class="notification-panel" 
+             @mouseenter="cancelCloseNotificationPanel"
+             @mouseleave="closeNotificationPanel">
+            <div class="notification-panel-header">
+              <span class="notification-title">健康预警</span>
+              <span class="mark-all-read" @click.stop="handleMarkAllAsRead">全部已读</span>
+            </div>
+            <div class="notification-list" v-if="notifications.length > 0">
+              <div 
+                v-for="notification in notifications" 
+                :key="notification.id" 
+                class="notification-item"
+                :class="{ 'unread': notification.isRead === 0 }"
+              >
+                <div class="notification-icon">
+                  <span v-if="notification.warningType === 'weight_fluctuation'" class="icon weight">⚖️</span>
+                  <span v-else-if="notification.warningType === 'clock_miss'" class="icon clock">⏰</span>
+                  <span v-else-if="notification.warningType === 'bmi_abnormal'" class="icon bmi">📊</span>
+                  <span v-else-if="notification.warningType === 'checkin_remind'" class="icon checkin">✅</span>
+                  <span v-else-if="notification.warningType === 'weight_record_remind'" class="icon weight-record">📝</span>
+                  <span v-else class="icon default">⚠️</span>
+                </div>
+                <div class="notification-content">
+                  <p class="notification-text">{{ notification.warningContent }}</p>
+                  <p class="notification-time">{{ formatTime(notification.createTime) }}</p>
+                </div>
+                <div class="notification-actions">
+                  <span class="action-btn" @click.stop="handleMarkAsRead(notification.id)">已读</span>
+                  <span class="action-btn delete" @click.stop="handleDeleteNotification(notification.id)">删除</span>
+                </div>
+              </div>
+            </div>
+            <div v-else class="notification-empty">
+              <el-icon :size="48" color="#94a3b8"><Bell /></el-icon>
+              <p>暂无预警消息</p>
+            </div>
+          </div>
+        </div>
+        
         <div class="checkin-btn-wrapper">
           <div v-if="checkinStatus.checkedInToday" class="checkin-btn done">
             <el-icon :size="20" color="#67c23a"><CircleCheck /></el-icon>
@@ -17,6 +64,27 @@
             <span>{{ checkinLoading ? '签到中...' : '签到' }}</span>
           </div>
         </div>
+        
+        <div class="api-key-wrapper">
+          <div v-if="showApiKeyInput" class="api-key-input-box">
+            <el-input
+              v-model="apiKey"
+              type="password"
+              placeholder="请输入DashScope API Key"
+              class="api-key-input"
+              @blur="saveApiKey"
+            />
+            <el-button size="small" type="primary" @click="saveApiKey">保存</el-button>
+            <el-button size="small" @click="toggleApiKeyInput">关闭</el-button>
+          </div>
+          <div v-else class="api-key-toggle" @click="toggleApiKeyInput">
+            <el-icon :size="18" :color="apiKeySaved ? '#67c23a' : '#94a3b8'"><Setting /></el-icon>
+            <span :style="{ color: apiKeySaved ? '#67c23a' : '#64748b' }">
+              {{ apiKeySaved ? 'API已配置' : '配置API' }}
+            </span>
+          </div>
+        </div>
+        
         <el-dropdown @command="handleCommand">
           <span class="el-dropdown-link">
             <el-icon class="user-icon" size="24"><User /></el-icon>
@@ -210,9 +278,9 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refresh, Histogram, Setting, CircleCheck, Loading } from '@element-plus/icons-vue'
+import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refresh, Histogram, Setting, CircleCheck, Loading, Bell } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { changePassword, checkHealthRecordExists, createHealthRecord, getCheckinStatus, dailyCheckin } from '@/api/user'
+import { changePassword, checkHealthRecordExists, createHealthRecord, getCheckinStatus, dailyCheckin, getWarnings, getUnreadWarningCount, markAllWarningsAsRead, markWarningAsRead, deleteWarning } from '@/api/user'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -232,6 +300,33 @@ const passwordFormRef = ref(null)
 const showHealthRecordModal = ref(false)
 const healthRecordFormRef = ref(null)
 const healthRecordLoading = ref(false)
+
+const apiKey = ref('')
+const showApiKeyInput = ref(false)
+const apiKeySaved = ref(false)
+
+const notificationCount = ref(0)
+const showNotificationPanel = ref(false)
+const notifications = ref([])
+const notificationLoading = ref(false)
+let leaveTimer = null
+
+const toggleApiKeyInput = () => {
+  showApiKeyInput.value = !showApiKeyInput.value
+  if (!showApiKeyInput.value && apiKey.value) {
+    localStorage.setItem('dashscope_api_key', apiKey.value)
+    apiKeySaved.value = true
+    ElMessage.success('API Key已保存')
+  }
+}
+
+const saveApiKey = () => {
+  if (apiKey.value) {
+    localStorage.setItem('dashscope_api_key', apiKey.value)
+    apiKeySaved.value = true
+    ElMessage.success('API Key已保存')
+  }
+}
 
 const healthRecordForm = reactive({
   age: null,
@@ -404,9 +499,117 @@ const handleChangePassword = async () => {
   }
 }
 
+const fetchNotificationCount = async () => {
+  try {
+    const res = await getUnreadWarningCount()
+    notificationCount.value = res.data.count
+  } catch (error) {
+    console.error('获取未读预警数量失败', error)
+  }
+}
+
+const fetchNotifications = async () => {
+  try {
+    notificationLoading.value = true
+    const res = await getWarnings()
+    notifications.value = res.data
+  } catch (error) {
+    console.error('获取预警消息失败', error)
+  } finally {
+    notificationLoading.value = false
+  }
+}
+
+const openNotificationPanel = async () => {
+  if (leaveTimer) {
+    clearTimeout(leaveTimer)
+    leaveTimer = null
+  }
+  showNotificationPanel.value = true
+  await fetchNotifications()
+}
+
+const closeNotificationPanel = () => {
+  leaveTimer = setTimeout(() => {
+    showNotificationPanel.value = false
+    leaveTimer = null
+  }, 200)
+}
+
+const cancelCloseNotificationPanel = () => {
+  if (leaveTimer) {
+    clearTimeout(leaveTimer)
+    leaveTimer = null
+  }
+}
+
+const handleMarkAllAsRead = async () => {
+  try {
+    await markAllWarningsAsRead()
+    notificationCount.value = 0
+    notifications.value.forEach(n => n.isRead = 1)
+    ElMessage.success('已全部标记为已读')
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+}
+
+const handleMarkAsRead = async (id) => {
+  try {
+    await markWarningAsRead(id)
+    const notification = notifications.value.find(n => n.id === id)
+    if (notification) {
+      notification.isRead = 1
+      notificationCount.value = Math.max(0, notificationCount.value - 1)
+    }
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+}
+
+const handleDeleteNotification = async (id) => {
+  try {
+    await deleteWarning(id)
+    notifications.value = notifications.value.filter(n => n.id !== id)
+    ElMessage.success('删除成功')
+  } catch (error) {
+    ElMessage.error('删除失败')
+  }
+}
+
+const formatTime = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (days === 0) {
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    if (hours === 0) {
+      const minutes = Math.floor(diff / (1000 * 60))
+      return minutes <= 0 ? '刚刚' : `${minutes}分钟前`
+    }
+    return `${hours}小时前`
+  } else if (days === 1) {
+    return '昨天'
+  } else if (days < 7) {
+    return `${days}天前`
+  } else {
+    return `${date.getMonth() + 1}月${date.getDate()}日`
+  }
+}
+
 onMounted(() => {
   checkAndShowHealthRecordModal()
   fetchCheckinStatus()
+  fetchNotificationCount()
+  
+  const savedApiKey = localStorage.getItem('dashscope_api_key')
+  if (savedApiKey) {
+    apiKey.value = savedApiKey
+    apiKeySaved.value = true
+  }
 })
 </script>
 
@@ -498,6 +701,244 @@ onMounted(() => {
   font-size: 17px;
   color: #475569;
   font-weight: 500;
+}
+
+.api-key-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.api-key-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(100, 116, 139, 0.08);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-size: 14px;
+  
+  &:hover {
+    background: rgba(100, 116, 139, 0.15);
+  }
+}
+
+.api-key-input-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(79, 172, 254, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(79, 172, 254, 0.3);
+}
+
+.api-key-input {
+  width: 280px;
+  font-size: 13px;
+}
+
+.api-key-input-box .el-button {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.notification-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notification-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  
+  &:hover {
+    background: rgba(91, 155, 213, 0.1);
+  }
+}
+
+.notification-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  background: #f56c6c;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 380px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1000;
+  animation: fadeInDown 0.25s ease;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.notification-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.mark-all-read {
+  font-size: 13px;
+  color: #5b9bd5;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: #409eff;
+  }
+}
+
+.notification-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.2s ease;
+  
+  &:hover {
+    background: #fafafa;
+  }
+  
+  &.unread {
+    background: rgba(91, 155, 213, 0.04);
+  }
+}
+
+.notification-icon {
+  margin-right: 12px;
+  font-size: 20px;
+  
+  .icon {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    
+    &.weight {
+      background: rgba(245, 108, 108, 0.1);
+    }
+    &.clock {
+      background: rgba(250, 173, 20, 0.1);
+    }
+    &.bmi {
+      background: rgba(103, 194, 58, 0.1);
+    }
+    &.checkin {
+      background: rgba(64, 158, 255, 0.1);
+    }
+    &.weight-record {
+      background: rgba(156, 136, 255, 0.1);
+    }
+    &.default {
+      background: rgba(148, 163, 184, 0.1);
+    }
+  }
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-text {
+  font-size: 14px;
+  color: #475569;
+  margin: 0 0 6px 0;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.notification-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 12px;
+}
+
+.action-btn {
+  font-size: 12px;
+  color: #5b9bd5;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(91, 155, 213, 0.1);
+  }
+  
+  &.delete {
+    color: #f56c6c;
+    
+    &:hover {
+      background: rgba(245, 108, 108, 0.1);
+    }
+  }
+}
+
+.notification-empty {
+  padding: 40px 20px;
+  text-align: center;
+  
+  p {
+    margin: 12px 0 0 0;
+    color: #94a3b8;
+    font-size: 14px;
+  }
 }
 
 .el-dropdown-link {

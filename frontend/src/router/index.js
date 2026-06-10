@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { useUserStore } from '../stores/user'
-import { checkHealthRecordExists } from '../api/user'
 
 const routes = [
   {
@@ -34,7 +33,7 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   
   if (to.meta.requiresAuth && !userStore.token) {

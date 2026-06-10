@@ -27,12 +27,33 @@
         SELECT * FROM ai_plan WHERE user_id = #{userId} AND is_deleted = 0 ORDER BY generate_time DESC
     </select>
 
+    <select id="findByUserIdPaginated" resultMap="AiPlanResultMap">
+        SELECT * FROM ai_plan WHERE user_id = #{userId} AND is_deleted = 0 ORDER BY generate_time DESC LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*) FROM ai_plan WHERE user_id = #{userId} AND is_deleted = 0
+    </select>
+
     <select id="findById" resultMap="AiPlanResultMap">
         SELECT * FROM ai_plan WHERE id = #{id} AND is_deleted = 0
     </select>
 
     <update id="deleteById">
         UPDATE ai_plan SET is_deleted = 1 WHERE id = #{id}
+    </update>
+
+    <update id="updateById">
+        UPDATE ai_plan 
+        SET plan_title = #{planTitle}, 
+            total_calorie = #{totalCalorie}, 
+            plan_content = #{planContent}, 
+            version_no = #{versionNo}, 
+            parent_plan_id = #{parentPlanId}, 
+            generate_time = #{generateTime}, 
+            update_time = #{updateTime}, 
+            is_deleted = #{isDeleted}
+        WHERE id = #{id}
     </update>
 
     <select id="findLatestByUserId" resultMap="AiPlanResultMap">

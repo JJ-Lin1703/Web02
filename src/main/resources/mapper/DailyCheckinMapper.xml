@@ -23,7 +23,7 @@
         SELECT * FROM daily_checkin WHERE user_id = #{userId} AND checkin_date = #{checkinDate}
     </select>
 
-    <select id="countByUserId" resultType="java.lang.Integer">
+    <select id="countByUserId" resultType="long">
         SELECT COUNT(*) FROM daily_checkin WHERE user_id = #{userId}
     </select>
 
@@ -36,6 +36,10 @@
         SELECT * FROM daily_checkin WHERE user_id = #{userId} ORDER BY checkin_date DESC
     </select>
 
+    <select id="findByUserIdPaginated" resultMap="DailyCheckinResultMap">
+        SELECT * FROM daily_checkin WHERE user_id = #{userId} ORDER BY checkin_date DESC LIMIT #{offset}, #{limit}
+    </select>
+
     <select id="getContinuousDays" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM (
             SELECT * FROM daily_checkin 
@@ -44,5 +48,9 @@
             LIMIT 365
         ) t
         WHERE checkin_date >= DATE_SUB(CURDATE(), INTERVAL (SELECT COUNT(*) FROM (SELECT * FROM daily_checkin WHERE user_id = #{userId} ORDER BY checkin_date DESC LIMIT 365) AS temp) - 1 DAY)
+    </select>
+
+    <select id="checkTodayCheckin" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM daily_checkin WHERE user_id = #{userId} AND checkin_date = #{checkinDate}
     </select>
 </mapper>

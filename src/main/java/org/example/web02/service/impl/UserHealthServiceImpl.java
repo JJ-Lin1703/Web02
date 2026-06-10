@@ -6,6 +6,7 @@ import org.example.web02.entity.UserHealth;
 import org.example.web02.exception.BusinessException;
 import org.example.web02.mapper.UserHealthMapper;
 import org.example.web02.service.UserHealthService;
+import org.example.web02.service.WarningLogService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +18,11 @@ import java.util.Date;
 public class UserHealthServiceImpl implements UserHealthService {
 
     private final UserHealthMapper userHealthMapper;
+    private final WarningLogService warningLogService;
 
-    public UserHealthServiceImpl(UserHealthMapper userHealthMapper) {
+    public UserHealthServiceImpl(UserHealthMapper userHealthMapper, WarningLogService warningLogService) {
         this.userHealthMapper = userHealthMapper;
+        this.warningLogService = warningLogService;
     }
 
     @Override
@@ -54,6 +57,8 @@ public class UserHealthServiceImpl implements UserHealthService {
 
         userHealthMapper.insert(userHealth);
 
+        warningLogService.checkBmiAbnormal(userId, userHealth.getBmi().doubleValue());
+
         return buildResponse(userHealth);
     }
 
@@ -85,6 +90,8 @@ public class UserHealthServiceImpl implements UserHealthService {
         userHealth.setUpdateTime(new Date());
 
         userHealthMapper.update(userHealth);
+
+        warningLogService.checkBmiAbnormal(userId, userHealth.getBmi().doubleValue());
 
         return buildResponse(userHealth);
     }

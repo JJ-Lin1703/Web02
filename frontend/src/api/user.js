@@ -92,14 +92,15 @@ export const checkHealthRecordExists = () => {
   })
 }
 
-export const getCheckinHistory = () => {
+export const getCheckinHistory = (params = {}) => {
   return request({
     url: '/checkin/history',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 
-export const getWeightHistory = (params) => {
+export const getWeightHistory = (params = {}) => {
   return request({
     url: '/weight-record/history',
     method: 'get',
@@ -154,10 +155,11 @@ export const tweakAiPlan = (data) => {
   })
 }
 
-export const getAiPlanHistory = () => {
+export const getAiPlanHistory = (params = {}) => {
   return request({
     url: '/ai-plan/history',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 
@@ -172,6 +174,14 @@ export const deleteAiPlan = (id) => {
   return request({
     url: `/ai-plan/${id}`,
     method: 'delete'
+  })
+}
+
+export const updateAiPlanContent = (planId, planContent) => {
+  return request({
+    url: `/ai-plan/${planId}/content`,
+    method: 'put',
+    data: { planContent: planContent }
   })
 }
 
@@ -346,6 +356,43 @@ export const updateDictLabel = (id, data) => {
 export const deleteDictLabel = (id) => {
   return request({
     url: `/dict-label-options/${id}`,
+    method: 'delete'
+  })
+}
+
+// ======================== 健康预警 ===========================
+
+export const getWarnings = () => {
+  return request({
+    url: '/warnings',
+    method: 'get'
+  })
+}
+
+export const getUnreadWarningCount = () => {
+  return request({
+    url: '/warnings/unread/count',
+    method: 'get'
+  })
+}
+
+export const markAllWarningsAsRead = () => {
+  return request({
+    url: '/warnings/read-all',
+    method: 'post'
+  })
+}
+
+export const markWarningAsRead = (id) => {
+  return request({
+    url: `/warnings/${id}/read`,
+    method: 'post'
+  })
+}
+
+export const deleteWarning = (id) => {
+  return request({
+    url: `/warnings/${id}`,
     method: 'delete'
   })
 }

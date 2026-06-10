@@ -45,6 +45,40 @@
         </choose>
     </select>
 
+    <select id="findByUserIdWithFilterPaginated" resultMap="WeightRecordResultMap">
+        SELECT * FROM weight_record
+        <where>
+            user_id = #{userId} AND is_deleted = 0
+            <if test="startDate != null">
+                AND record_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND record_date &lt;= #{endDate}
+            </if>
+        </where>
+        <choose>
+            <when test="sortBy == 'weight'">ORDER BY weight ASC</when>
+            <when test="sortBy == 'weightDesc'">ORDER BY weight DESC</when>
+            <when test="sortBy == 'recordDate'">ORDER BY record_date ASC</when>
+            <when test="sortBy == 'recordDateDesc'">ORDER BY record_date DESC</when>
+            <otherwise>ORDER BY record_date DESC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByUserIdWithFilter" resultType="long">
+        SELECT COUNT(*) FROM weight_record
+        <where>
+            user_id = #{userId} AND is_deleted = 0
+            <if test="startDate != null">
+                AND record_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND record_date &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+
     <select id="findRecent30DaysWeight" resultMap="WeightRecordResultMap">
         SELECT * FROM weight_record
         WHERE user_id = #{userId} 
@@ -67,4 +101,16 @@
     <update id="update">
         UPDATE weight_record SET weight = #{weight}, update_time = NOW() WHERE id = #{id}
     </update>
+
+    <select id="getWeightsInLast7Days" resultType="java.math.BigDecimal">
+        SELECT weight FROM weight_record
+        WHERE user_id = #{userId} 
+          AND is_deleted = 0 
+          AND record_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        ORDER BY record_date ASC
+    </select>
+
+    <select id="checkTodayRecord" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM weight_record WHERE user_id = #{userId} AND record_date = #{recordDate} AND is_deleted = 0
+    </select>
 </mapper>

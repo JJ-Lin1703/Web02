@@ -25,4 +25,6 @@ public interface UserMapper {
     List<User> findAllUsers();
 
     int resetPassword(@Param("id") Long id, @Param("password") String password);
+
+List<Long> findAllActiveUserIds();
 }

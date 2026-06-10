@@ -154,17 +154,21 @@ const fetchWeightData = async () => {
     if (startDate) params.startDate = startDate
     
     const res = await getWeightHistory(params)
-    const data = res.data || []
+    const data = res.data?.records || []
     
     await nextTick()
     
     if (data.length === 0) {
-      renderEmptyChart(weightChartRef.value, '暂无体重数据')
+      weightChartInstance = renderEmptyChart(weightChartRef.value, '暂无体重数据', weightChartInstance)
     } else {
+      if (weightChartInstance) {
+        weightChartInstance.dispose()
+        weightChartInstance = null
+      }
       renderWeightChart(data)
     }
   } catch {
-    renderEmptyChart(weightChartRef.value, '暂无体重数据')
+    weightChartInstance = renderEmptyChart(weightChartRef.value, '暂无体重数据', weightChartInstance)
   } finally {
     weightLoading.value = false
   }
@@ -178,9 +182,18 @@ const fetchCompletionData = async () => {
     const weekRecords = data.records || []
     
     await nextTick()
-    renderCompletionChart(weekRecords)
+    
+    if (weekRecords.length === 0) {
+      completionChartInstance = renderEmptyChart(completionChartRef.value, '暂无打卡数据', completionChartInstance)
+    } else {
+      if (completionChartInstance) {
+        completionChartInstance.dispose()
+        completionChartInstance = null
+      }
+      renderCompletionChart(weekRecords)
+    }
   } catch {
-    renderEmptyChart(completionChartRef.value, '暂无打卡数据')
+    completionChartInstance = renderEmptyChart(completionChartRef.value, '暂无打卡数据', completionChartInstance)
   } finally {
     completionLoading.value = false
   }
@@ -192,9 +205,14 @@ const fetchCalorieData = async () => {
     const mockData = { staple: 45, protein: 25, vegetable: 30 }
     
     await nextTick()
+    
+    if (calorieChartInstance) {
+      calorieChartInstance.dispose()
+      calorieChartInstance = null
+    }
     renderCalorieChart(mockData)
   } catch {
-    renderEmptyChart(calorieChartRef.value, '暂无热量数据')
+    calorieChartInstance = renderEmptyChart(calorieChartRef.value, '暂无热量数据', calorieChartInstance)
   } finally {
     calorieLoading.value = false
   }
@@ -338,8 +356,12 @@ const renderCalorieChart = (data) => {
   calorieChartInstance.setOption(option)
 }
 
-const renderEmptyChart = (el, text) => {
+const renderEmptyChart = (el, text, chartInstance) => {
   if (!el) return
+  
+  if (chartInstance) {
+    chartInstance.dispose()
+  }
   
   const instance = echarts.init(el)
   instance.setOption({
@@ -352,6 +374,8 @@ const renderEmptyChart = (el, text) => {
     xAxis: { show: false },
     yAxis: { show: false }
   })
+  
+  return instance
 }
 
 const handleResize = () => {

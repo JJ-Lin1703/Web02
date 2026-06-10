@@ -72,6 +72,18 @@
               </template>
             </el-table-column>
           </el-table>
+          
+          <div class="pagination-container">
+            <el-pagination
+              v-model:current-page="weightPagination.pageNum"
+              v-model:page-size="weightPagination.pageSize"
+              :page-sizes="[10, 20, 50]"
+              :total="weightPagination.total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="fetchWeightHistory"
+              @current-change="fetchWeightHistory"
+            />
+          </div>
         </el-card>
       </el-tab-pane>
 
@@ -104,6 +116,18 @@
               </template>
             </el-table-column>
           </el-table>
+          
+          <div class="pagination-container">
+            <el-pagination
+              v-model:current-page="aiPlanPagination.pageNum"
+              v-model:page-size="aiPlanPagination.pageSize"
+              :page-sizes="[10, 20, 50]"
+              :total="aiPlanPagination.total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="fetchAiPlanHistory"
+              @current-change="fetchAiPlanHistory"
+            />
+          </div>
         </el-card>
       </el-tab-pane>
 
@@ -125,6 +149,18 @@
             </el-table-column>
             <el-table-column prop="continuousDays" label="连续签到天数" width="150" />
           </el-table>
+          
+          <div class="pagination-container">
+            <el-pagination
+              v-model:current-page="checkinPagination.pageNum"
+              v-model:page-size="checkinPagination.pageSize"
+              :page-sizes="[10, 20, 50]"
+              :total="checkinPagination.total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="fetchCheckinHistory"
+              @current-change="fetchCheckinHistory"
+            />
+          </div>
         </el-card>
       </el-tab-pane>
     </el-tabs>
@@ -180,13 +216,28 @@ const weightForm = reactive({
 const weightHistory = ref([])
 const weightLoading = ref(false)
 const weightTableLoading = ref(false)
+const weightPagination = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  total: 0
+})
 
 const checkinHistory = ref([])
 const checkinLoading = ref(false)
+const checkinPagination = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  total: 0
+})
 
 const aiPlanHistory = ref([])
 const aiPlanLoading = ref(false)
 const planSortBy = ref('desc')
+const aiPlanPagination = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  total: 0
+})
 
 const planDetailVisible = ref(false)
 const selectedPlan = ref(null)
@@ -207,12 +258,16 @@ const searchForm = reactive({
 const fetchWeightHistory = async () => {
   weightTableLoading.value = true
   try {
-    const params = {}
+    const params = {
+      pageNum: weightPagination.pageNum,
+      pageSize: weightPagination.pageSize
+    }
     if (searchForm.startDate) params.startDate = searchForm.startDate
     if (searchForm.endDate) params.endDate = searchForm.endDate
     if (searchForm.sortBy) params.sortBy = searchForm.sortBy
     const res = await getWeightHistory(params)
-    weightHistory.value = res.data || []
+    weightHistory.value = res.data?.records || []
+    weightPagination.total = res.data?.total || 0
   } finally {
     weightTableLoading.value = false
   }
@@ -282,14 +337,19 @@ const resetSearch = () => {
   searchForm.startDate = null
   searchForm.endDate = null
   searchForm.sortBy = ''
+  weightPagination.pageNum = 1
   fetchWeightHistory()
 }
 
 const fetchCheckinHistory = async () => {
   checkinLoading.value = true
   try {
-    const res = await getCheckinHistory()
-    checkinHistory.value = res.data || []
+    const res = await getCheckinHistory({
+      pageNum: checkinPagination.pageNum,
+      pageSize: checkinPagination.pageSize
+    })
+    checkinHistory.value = res.data?.records || []
+    checkinPagination.total = res.data?.total || 0
   } finally {
     checkinLoading.value = false
   }
@@ -298,12 +358,12 @@ const fetchCheckinHistory = async () => {
 const fetchAiPlanHistory = async () => {
   aiPlanLoading.value = true
   try {
-    const res = await getAiPlanHistory()
-    let data = res.data || []
-    if (planSortBy.value === 'asc') {
-      data = data.reverse()
-    }
-    aiPlanHistory.value = data
+    const res = await getAiPlanHistory({
+      pageNum: aiPlanPagination.pageNum,
+      pageSize: aiPlanPagination.pageSize
+    })
+    aiPlanHistory.value = res.data?.records || []
+    aiPlanPagination.total = res.data?.total || 0
   } finally {
     aiPlanLoading.value = false
   }
@@ -381,6 +441,11 @@ onMounted(() => {
   align-items: center;
 }
 
+.card-title {
+  font-size: 22px;
+  font-weight: 600;
+}
+
 .weight-form {
   display: flex;
   align-items: flex-end;
@@ -388,6 +453,12 @@ onMounted(() => {
 
 .search-bar {
   font-size: 16px;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 
 .plan-detail-content {
@@ -403,13 +474,14 @@ onMounted(() => {
 .plan-info h3 {
   margin: 0 0 10px 0;
   color: #303133;
+  font-size: 22px;
 }
 
 .plan-meta {
   display: flex;
   gap: 20px;
   color: #909399;
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .plan-content {
@@ -425,8 +497,8 @@ onMounted(() => {
   word-break: break-all;
   margin: 0;
   padding: 0;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 18px;
+  line-height: 1.8;
   color: #303133;
 }
 </style>

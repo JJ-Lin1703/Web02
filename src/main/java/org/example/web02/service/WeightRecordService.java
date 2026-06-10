@@ -1,5 +1,6 @@
 package org.example.web02.service;
 
+import org.example.web02.dto.response.PageResult;
 import org.example.web02.entity.WeightRecord;
 
 import java.math.BigDecimal;
@@ -12,6 +13,8 @@ public interface WeightRecordService {
     List<WeightRecord> getWeightHistory(Long userId);
 
     List<WeightRecord> getWeightHistoryFiltered(Long userId, String startDate, String endDate, String sortBy);
+
+    PageResult<WeightRecord> getWeightHistoryPaginated(Long userId, String startDate, String endDate, String sortBy, int pageNum, int pageSize);
 
     void deleteWeightRecord(Long userId, Long recordId);
 

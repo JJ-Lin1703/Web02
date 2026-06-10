@@ -193,10 +193,12 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, ScaleToOriginal, Minus, TrendCharts, Warning, Document, Refresh, ArrowDown, ArrowUp, FirstAidKit, Food, Aim, InfoFilled, Check, Promotion } from '@element-plus/icons-vue'
 import { getHealthRecord, createHealthRecord, updateHealthRecord, getDictLabelOptions } from '@/api/user'
 
+const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
 const isEditMode = ref(false)
@@ -339,7 +341,9 @@ const handleSubmit = async () => {
     } else {
       await createHealthRecord(requestData)
       ElMessage.success('健康档案创建成功')
-      isEditMode.value = true
+      setTimeout(() => {
+        router.push('/')
+      }, 1500)
     }
   } catch (error) {
     ElMessage.error(error.response?.data?.message || '操作失败')

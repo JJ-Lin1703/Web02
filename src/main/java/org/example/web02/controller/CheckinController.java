@@ -1,6 +1,7 @@
 package org.example.web02.controller;
 
 import org.example.web02.dto.response.ApiResponse;
+import org.example.web02.dto.response.PageResult;
 import org.example.web02.entity.DailyCheckin;
 import org.example.web02.service.CheckinService;
 import org.springframework.security.core.Authentication;
@@ -47,8 +48,10 @@ public class CheckinController {
     }
 
     @GetMapping("/history")
-    public ApiResponse<?> getCheckinHistory(Authentication authentication) {
+    public ApiResponse<PageResult<DailyCheckin>> getCheckinHistory(Authentication authentication,
+                                                                   @RequestParam(defaultValue = "1") int pageNum,
+                                                                   @RequestParam(defaultValue = "10") int pageSize) {
         Long userId = (Long) authentication.getPrincipal();
-        return ApiResponse.success(checkinService.getCheckinHistory(userId));
+        return ApiResponse.success(checkinService.getCheckinHistoryPaginated(userId, pageNum, pageSize));
     }
 }

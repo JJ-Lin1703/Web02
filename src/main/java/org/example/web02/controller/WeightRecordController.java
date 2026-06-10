@@ -1,6 +1,7 @@
 package org.example.web02.controller;
 
 import org.example.web02.dto.response.ApiResponse;
+import org.example.web02.dto.response.PageResult;
 import org.example.web02.entity.WeightRecord;
 import org.example.web02.service.WeightRecordService;
 import org.springframework.security.core.Authentication;
@@ -31,17 +32,15 @@ public class WeightRecordController {
     }
 
     @GetMapping("/history")
-    public ApiResponse<List<WeightRecord>> getWeightHistory(Authentication authentication,
-                                                             @RequestParam(required = false) String startDate,
-                                                             @RequestParam(required = false) String endDate,
-                                                             @RequestParam(required = false) String sortBy) {
+    public ApiResponse<PageResult<WeightRecord>> getWeightHistory(Authentication authentication,
+                                                                  @RequestParam(required = false) String startDate,
+                                                                  @RequestParam(required = false) String endDate,
+                                                                  @RequestParam(required = false) String sortBy,
+                                                                  @RequestParam(defaultValue = "1") int pageNum,
+                                                                  @RequestParam(defaultValue = "10") int pageSize) {
         Long userId = (Long) authentication.getPrincipal();
-        if (startDate != null || endDate != null || sortBy != null) {
-            List<WeightRecord> history = weightRecordService.getWeightHistoryFiltered(userId, startDate, endDate, sortBy);
-            return ApiResponse.success(history);
-        }
-        List<WeightRecord> history = weightRecordService.getWeightHistory(userId);
-        return ApiResponse.success(history);
+        PageResult<WeightRecord> result = weightRecordService.getWeightHistoryPaginated(userId, startDate, endDate, sortBy, pageNum, pageSize);
+        return ApiResponse.success(result);
     }
 
     @DeleteMapping("/{id}")

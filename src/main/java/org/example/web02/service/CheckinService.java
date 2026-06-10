@@ -1,5 +1,6 @@
 package org.example.web02.service;
 
+import org.example.web02.dto.response.PageResult;
 import org.example.web02.entity.DailyCheckin;
 
 import java.util.List;
@@ -17,4 +18,6 @@ public interface CheckinService {
     int getWeekCheckinDays(Long userId);
 
     List<DailyCheckin> getCheckinHistory(Long userId);
+
+    PageResult<DailyCheckin> getCheckinHistoryPaginated(Long userId, int pageNum, int pageSize);
 }

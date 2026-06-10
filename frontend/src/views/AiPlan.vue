@@ -65,21 +65,35 @@
                   <div class="section">
                     <h4><el-icon><Bowl /></el-icon> 饮食</h4>
                     <div class="meal-cards">
-                      <div v-for="meal in selectedDayData.diet" :key="meal.type" class="meal-card">
+                      <div v-for="(meal, mealIndex) in selectedDayData.diet" :key="meal.type" class="meal-card">
                         <span class="meal-type-tag">{{ meal.type }}</span>
                         <div class="meal-card-body">
                           <span class="meal-name">{{ meal.name }}</span>
                           <span class="meal-calorie">{{ meal.calorie }}</span>
                         </div>
+                        <el-button 
+                          link 
+                          class="edit-btn" 
+                          @click="openEditDialog('diet', mealIndex)"
+                        >
+                          <Edit />
+                        </el-button>
                       </div>
                     </div>
                   </div>
                   <div class="section">
                     <h4><el-icon><TrendCharts /></el-icon> 运动</h4>
                     <div class="exercise-cards">
-                      <div v-for="ex in selectedDayData.exercise" :key="ex.name" class="exercise-card">
+                      <div v-for="(ex, exIndex) in selectedDayData.exercise" :key="ex.name" class="exercise-card">
                         <span class="ex-name">{{ ex.name }}</span>
                         <span class="ex-duration">{{ ex.duration }}</span>
+                        <el-button 
+                          link 
+                          class="edit-btn" 
+                          @click="openEditDialog('exercise', exIndex)"
+                        >
+                          <Edit />
+                        </el-button>
                       </div>
                     </div>
                   </div>
@@ -104,6 +118,32 @@
         </el-card>
       </el-tab-pane>
     </el-tabs>
+
+    <!-- 直接编辑弹窗 -->
+    <el-dialog v-model="editDialogVisible" :title="editDialogTitle" width="480px" append-to-body>
+      <el-form :model="editForm" label-width="80px">
+        <el-form-item v-if="editType === 'diet'" label="餐食类型">
+          <el-select v-model="editForm.type" placeholder="请选择">
+            <el-option label="早餐" value="早餐" />
+            <el-option label="午餐" value="午餐" />
+            <el-option label="晚餐" value="晚餐" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="editType === 'diet' ? '餐食名称' : '运动名称'">
+          <el-input v-model="editForm.name" placeholder="请输入名称" />
+        </el-form-item>
+        <el-form-item :label="editType === 'diet' ? '热量' : '时长'">
+          <el-input v-model="editForm.extra" placeholder="如：350kcal 或 30分钟" />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleEditSubmit" :loading="editing">
+          保存修改
+        </el-button>
+      </template>
+    </el-dialog>
 
     <!-- 微调计划弹窗 -->
     <el-dialog v-model="tweakDialogVisible" title="计划微调反馈" width="550px" append-to-body>
@@ -158,16 +198,33 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Bowl, TrendCharts } from '@element-plus/icons-vue'
+import { Bowl, TrendCharts, Edit } from '@element-plus/icons-vue'
 import { Vue3Lottie } from 'vue3-lottie'
-import { generateAiPlan, getLatestAiPlan, exportAiPlanPdf, tweakAiPlan } from '@/api/user'
+import { generateAiPlan, getLatestAiPlan, exportAiPlanPdf, tweakAiPlan, updateAiPlanContent } from '@/api/user'
 
 const activeTab = ref('plan')
 const loading = ref(false)
 const generating = ref(false)
 const exporting = ref(false)
+const editing = ref(false)
 const currentPlan = ref(null)
 const selectedDay = ref('周一')
+
+// 编辑相关状态
+const editDialogVisible = ref(false)
+const editType = ref('diet') // 'diet' or 'exercise'
+const editIndex = ref(0)
+const editForm = ref({
+  type: '',
+  name: '',
+  extra: ''
+})
+
+const editDialogTitle = computed(() => {
+  const dayName = selectedDay.value
+  const moduleName = editType.value === 'diet' ? '饮食' : '运动'
+  return `${dayName} - ${moduleName}编辑`
+})
 
 const weeklyPlanData = computed(() => {
   if (!currentPlan.value || !currentPlan.value.planContent) return null
@@ -280,6 +337,69 @@ const tweakOriginalContent = computed(() => {
 
 const tweakIsDiet = computed(() => tweakForm.value.module === '饮食')
 
+const openEditDialog = (type, index) => {
+  editType.value = type
+  editIndex.value = index
+  
+  const dayData = selectedDayData.value
+  if (!dayData) return
+  
+  const item = type === 'diet' ? dayData.diet[index] : dayData.exercise[index]
+  if (item) {
+    editForm.value = {
+      type: item.type || '',
+      name: item.name || '',
+      extra: item.calorie || item.duration || ''
+    }
+  }
+  
+  editDialogVisible.value = true
+}
+
+const handleEditSubmit = async () => {
+  if (!editForm.value.name) {
+    ElMessage.warning('请输入名称')
+    return
+  }
+  if (!editForm.value.extra) {
+    ElMessage.warning('请输入热量或时长')
+    return
+  }
+  
+  editing.value = true
+  try {
+    const planContent = JSON.parse(currentPlan.value.planContent)
+    const dayIndex = planContent.weeklyPlan.findIndex(d => d.dayName === selectedDay.value)
+    
+    if (dayIndex !== -1) {
+      if (editType.value === 'diet') {
+        planContent.weeklyPlan[dayIndex].diet[editIndex.value] = {
+          type: editForm.value.type || planContent.weeklyPlan[dayIndex].diet[editIndex.value].type,
+          name: editForm.value.name,
+          calorie: editForm.value.extra
+        }
+      } else {
+        planContent.weeklyPlan[dayIndex].exercise[editIndex.value] = {
+          name: editForm.value.name,
+          duration: editForm.value.extra
+        }
+      }
+    }
+    
+    const updatedContent = JSON.stringify(planContent)
+    await updateAiPlanContent(currentPlan.value.id, updatedContent)
+    
+    currentPlan.value.planContent = updatedContent
+    editDialogVisible.value = false
+    ElMessage.success('修改成功')
+  } catch (error) {
+    console.error('编辑失败', error)
+    ElMessage.error('编辑失败')
+  } finally {
+    editing.value = false
+  }
+}
+
 const showTweakDialog = () => {
   tweakForm.value = { dayName: '', module: '', itemDesc: '', reason: '' }
   tweakDialogVisible.value = true
@@ -307,7 +427,7 @@ const handleTweakSubmit = async () => {
     ElMessage.success('计划微调成功')
   } catch (error) {
     console.error('微调失败', error)
-    ElMessage.error('微调失败：' + (error.message || '未知错误'))
+    tweakDialogVisible.value = true
   } finally {
     tweaking.value = false
   }
@@ -341,7 +461,7 @@ onMounted(() => {
 }
 
 .card-title {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
 }
 
@@ -365,7 +485,7 @@ onMounted(() => {
 
 .plan-header h2 {
   margin: 0 0 16px 0;
-  font-size: 24px;
+  font-size: 32px;
   color: #303133;
 }
 
@@ -413,12 +533,12 @@ onMounted(() => {
 }
 
 .day-tab-name {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
 }
 
 .day-tab-date {
-  font-size: 11px;
+  font-size: 15px;
   opacity: 0.7;
 }
 
@@ -433,13 +553,13 @@ onMounted(() => {
 }
 
 .day-name {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   color: #409eff;
 }
 
 .day-date {
-  font-size: 14px;
+  font-size: 17px;
   color: #909399;
 }
 
@@ -453,7 +573,7 @@ onMounted(() => {
 
 .section h4 {
   margin: 0 0 8px 0;
-  font-size: 14px;
+  font-size: 18px;
   color: #606266;
   display: flex;
   align-items: center;
@@ -469,9 +589,8 @@ onMounted(() => {
 
 .meal-card {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   border-radius: 14px;
-  overflow: hidden;
   border: 1px solid #e8ecef;
   transition: all 0.2s ease;
 }
@@ -487,7 +606,7 @@ onMounted(() => {
   justify-content: center;
   width: 56px;
   padding: 12px 8px;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 600;
   color: #fff;
   background: #26B5B5;
@@ -503,6 +622,26 @@ onMounted(() => {
   align-items: center;
   padding: 12px 16px;
   background: #fff;
+}
+
+.meal-card .edit-btn,
+.exercise-card .edit-btn {
+  opacity: 1 !important;
+  color: #409eff !important;
+  margin-left: 12px !important;
+  padding: 6px 12px;
+  flex-shrink: 0;
+  border: 1px solid #409eff;
+  border-radius: 4px;
+  background: #fff;
+  transition: all 0.2s ease;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #ecf5ff;
+  }
 }
 
 .exercise-card {
@@ -524,20 +663,22 @@ onMounted(() => {
 .meal-name {
   flex: 1;
   color: #303133;
+  font-size: 18px;
 }
 
 .meal-calorie {
   color: #67c23a;
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .ex-name {
   color: #303133;
+  font-size: 18px;
 }
 
 .ex-duration {
   color: #e6a23c;
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .detail-content {
@@ -550,8 +691,8 @@ onMounted(() => {
   white-space: pre-wrap;
   word-break: break-all;
   margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 18px;
+  line-height: 1.8;
   color: #303133;
 }
 
@@ -565,15 +706,15 @@ onMounted(() => {
 
 .tweak-preview-label {
   margin: 0 0 6px 0;
-  font-size: 13px;
+  font-size: 16px;
   color: #909399;
 }
 
 .tweak-preview-text {
   margin: 0;
-  font-size: 14px;
+  font-size: 17px;
   color: #303133;
-  line-height: 1.7;
+  line-height: 1.8;
 }
 
 .tweak-preview-text strong {
@@ -590,7 +731,7 @@ onMounted(() => {
 
 .tweak-section-label {
   margin: 0 0 8px 0;
-  font-size: 13px;
+  font-size: 16px;
   color: #909399;
 }
 
@@ -604,7 +745,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .tweak-original-name {
@@ -613,7 +754,7 @@ onMounted(() => {
 
 .tweak-original-extra {
   color: #909399;
-  font-size: 13px;
+  font-size: 16px;
   margin-left: auto;
 }
 </style>

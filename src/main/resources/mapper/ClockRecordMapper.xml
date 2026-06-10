@@ -77,4 +77,5 @@
         SELECT SUM(JSON_LENGTH(total_item)) FROM clock_record 
         WHERE user_id = #{userId} AND record_date BETWEEN #{startDate} AND #{endDate} AND is_deleted = 0
     </select>
+
 </mapper>

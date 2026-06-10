@@ -1,7 +1,23 @@
 <template>
   <div class="home-container">
-    <el-row :gutter="20">
-      <el-col :span="6" v-if="healthRecord">
+    <div v-if="!healthRecord" class="health-record-prompt">
+      <el-card class="prompt-card">
+        <div class="prompt-icon">
+          <el-icon :size="48" color="#409eff"><FirstAidKit /></el-icon>
+        </div>
+        <div class="prompt-content">
+          <h3>欢迎使用智能健康助手</h3>
+          <p>请先完善您的健康档案，以便为您提供个性化服务</p>
+          <el-button type="primary" size="large" @click="goToHealthRecord">
+            <el-icon :size="18"><Edit /></el-icon>
+            填写健康档案
+          </el-button>
+        </div>
+      </el-card>
+    </div>
+    
+    <el-row :gutter="20" v-if="healthRecord">
+      <el-col :span="6">
         <div class="metric-card" :class="getBmiClass(parseFloat(healthRecord.bmi))">
           <div class="metric-icon">
             <el-icon :size="28" color="#fff"><ScaleToOriginal /></el-icon>
@@ -282,10 +298,17 @@
 </template>
 
 <script setup>import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { TrendCharts, ScaleToOriginal, CircleCheck, Check, Lightning, DataAnalysis, ArrowDown, ArrowUp, Minus, Loading, Bowl, MoreFilled } from '@element-plus/icons-vue';
+import { TrendCharts, ScaleToOriginal, CircleCheck, Check, Lightning, DataAnalysis, ArrowDown, ArrowUp, Minus, Loading, Bowl, MoreFilled, FirstAidKit, Edit } from '@element-plus/icons-vue';
 import * as echarts from 'echarts';
 import { getHealthRecord, getLatestAiPlan, saveClockRecord, getTodayClockRecord, getWeeklyStats } from '@/api/user';
+
+const router = useRouter();
+
+const goToHealthRecord = () => {
+  router.push('/record');
+};
 const healthRecord = ref(null);
 const aiSummary = ref(null);
 const calorieRange = ref(null);
@@ -687,9 +710,9 @@ watch(dailyTasks, () => {
 .metric-card {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 28px;
-  border-radius: 24px;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 16px;
   transition: all 0.3s ease;
   box-shadow: var(--shadow-card);
   
@@ -728,10 +751,10 @@ watch(dailyTasks, () => {
 }
 
 .metric-icon {
-  width: 72px;
-  height: 72px;
+  width: 56px;
+  height: 56px;
   background: rgba(255, 255, 255, 0.25);
-  border-radius: 36px;
+  border-radius: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -744,33 +767,33 @@ watch(dailyTasks, () => {
 }
 
 .metric-label {
-  font-size: 16px;
+  font-size: 14px;
   color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   font-weight: 500;
 }
 
 .metric-value {
-  font-size: 40px;
+  font-size: 28px;
   font-weight: 700;
   color: #ffffff;
   line-height: 1.1;
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
   letter-spacing: -1px;
 }
 
 .metric-unit {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
 }
 
 .metric-desc {
-  font-size: 16px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.85);
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .section-header {
@@ -1132,6 +1155,68 @@ watch(dailyTasks, () => {
   :deep(.el-icon) {
     flex-shrink: 0;
     margin-top: 3px;
+  }
+}
+
+.health-record-prompt {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 40px;
+}
+
+.prompt-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08) 0%, rgba(64, 158, 255, 0.02) 100%);
+  border: 2px solid rgba(64, 158, 255, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(64, 158, 255, 0.15);
+  max-width: 500px;
+  text-align: center;
+}
+
+.prompt-icon {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(64, 158, 255, 0.3);
+}
+
+.prompt-content h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.prompt-content p {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+}
+
+.prompt-content :deep(.el-button) {
+  padding: 14px 40px;
+  font-size: 16px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.3);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(64, 158, 255, 0.4);
   }
 }
 </style>

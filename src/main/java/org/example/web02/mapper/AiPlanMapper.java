@@ -13,9 +13,17 @@ public interface AiPlanMapper {
 
     List<AiPlan> findByUserId(@Param("userId") Long userId);
 
+    List<AiPlan> findByUserIdPaginated(@Param("userId") Long userId,
+                                       @Param("offset") long offset,
+                                       @Param("limit") long limit);
+
+    long countByUserId(@Param("userId") Long userId);
+
     AiPlan findById(@Param("id") Long id);
 
     AiPlan findLatestByUserId(@Param("userId") Long userId);
 
     int deleteById(@Param("id") Long id);
+
+    int updateById(AiPlan plan);
 }
