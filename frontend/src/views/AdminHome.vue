@@ -69,6 +69,9 @@
       <el-tab-pane label="标签字典管理" name="dict">
         <DictLabelManage />
       </el-tab-pane>
+      <el-tab-pane label="文档管理" name="doc-rag">
+        <DocManage />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -80,6 +83,7 @@ import { Management, Refresh, User, Key } from '@element-plus/icons-vue'
 import { getAllUsers, resetUserPassword } from '@/api/user'
 import KnowledgeBaseManage from './KnowledgeBaseManage.vue'
 import DictLabelManage from './DictLabelManage.vue'
+import DocManage from './DocManage.vue'
 
 const activeTab = ref('users')
 const loading = ref(false)

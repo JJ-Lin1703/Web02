@@ -19,17 +19,27 @@ import java.util.stream.Collectors;
 /**
  * 标签匹配型 RAG 知识检索服务
  * <p>
+ * 核心逻辑：从用户健康档案中提取标签（健康目标、饮食偏好、过敏、病史等），
+ * 然后在知识库中检索匹配这些标签的健康知识，用于增强AI生成计划的专业性。
+ * <p>
  * 所有合法标签值由 dict_label_options 表动态维护，不再硬编码。
  */
 @Service
 @Slf4j
 public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
+    /** 用户健康档案Mapper */
     private final UserHealthMapper userHealthMapper;
+    /** 知识库Mapper */
     private final KnowledgeBaseMapper knowledgeBaseMapper;
+    /** 标签选项Mapper */
     private final DictLabelOptionMapper dictLabelOptionMapper;
+    /** 标签选项服务 */
     private final DictLabelOptionService dictLabelOptionService;
 
+    /**
+     * 构造函数注入依赖
+     */
     public KnowledgeBaseServiceImpl(UserHealthMapper userHealthMapper,
                                     KnowledgeBaseMapper knowledgeBaseMapper,
                                     DictLabelOptionMapper dictLabelOptionMapper,
@@ -40,16 +50,25 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         this.dictLabelOptionService = dictLabelOptionService;
     }
 
-    // ==================== RAG 检索 ====================
+    // ==================== RAG 检索核心方法 ====================
 
+    /**
+     * 根据用户健康档案检索相关健康知识（RAG核心方法）
+     * 流程：获取用户健康档案 → 提取标签 → 检索匹配知识
+     *
+     * @param userId 用户ID
+     * @return 匹配的知识条目列表
+     */
     @Override
     public List<KnowledgeBase> retrieveRelevantKnowledge(Long userId) {
+        // Step 1: 获取用户健康档案
         UserHealth health = userHealthMapper.findByUserId(userId);
         if (health == null) {
             log.warn("用户 {} 健康档案不存在，跳过 RAG 检索", userId);
             return Collections.emptyList();
         }
 
+        // Step 2: 从健康档案中提取标签（与知识库标签匹配）
         Set<String> userTags = extractUserTags(health);
         if (userTags.isEmpty()) {
             log.info("用户 {} 无匹配标签，跳过 RAG 检索", userId);
@@ -58,6 +77,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
         log.info("用户 {} 提取到的 RAG 标签: {}", userId, userTags);
 
+        // Step 3: 根据标签检索知识库
         List<String> tagList = new ArrayList<>(userTags);
         List<KnowledgeBase> results = knowledgeBaseMapper.findByTags(tagList);
 

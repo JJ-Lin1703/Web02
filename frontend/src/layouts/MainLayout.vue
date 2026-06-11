@@ -108,7 +108,7 @@
     </el-header>
 
     <div class="content-wrapper">
-      <el-aside width="200px" class="aside">
+      <el-aside width="160px" class="aside">
         <el-menu
           :default-active="$route.path"
           class="menu"
@@ -138,6 +138,10 @@
           <el-menu-item index="/chart">
             <el-icon size="24"><Histogram /></el-icon>
             <span>数据可视化</span>
+          </el-menu-item>
+          <el-menu-item index="/doc-qa">
+            <el-icon size="24"><ChatDotRound /></el-icon>
+            <span>智能问答</span>
           </el-menu-item>
           <el-menu-item v-if="userStore.isAdmin()" index="/admin">
             <el-icon size="24"><Setting /></el-icon>
@@ -278,7 +282,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refresh, Histogram, Setting, CircleCheck, Loading, Bell } from '@element-plus/icons-vue'
+import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refresh, Histogram, Setting, CircleCheck, Loading, Bell, ChatDotRound } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { changePassword, checkHealthRecordExists, createHealthRecord, getCheckinStatus, dailyCheckin, getWarnings, getUnreadWarningCount, markAllWarningsAsRead, markWarningAsRead, deleteWarning } from '@/api/user'
 
@@ -970,12 +974,12 @@ onMounted(() => {
   position: fixed;
   top: 84px;
   left: 12px;
-  width: 200px;
+  width: 160px;
   height: calc(100vh - 96px);
   overflow-y: auto;
   z-index: 99;
-  border-radius: 28px;
-  box-shadow: 0 8px 24px rgba(38, 181, 181, 0.18);
+  border-radius: 24px;
+  box-shadow: 0 6px 20px rgba(38, 181, 181, 0.15);
 }
 
 .menu {
@@ -985,10 +989,10 @@ onMounted(() => {
 }
 
 .menu :deep(.el-menu-item) {
-  margin: 8px 16px;
-  border-radius: 30px;
-  padding: 18px 10px;
-  font-size: 16px;
+  margin: 6px 12px;
+  border-radius: 24px;
+  padding: 14px 8px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.9);
   transition: all 0.25s ease;
   font-weight: 500;
@@ -996,9 +1000,9 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   height: auto;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .menu :deep(.el-menu-item:hover) {
@@ -1021,8 +1025,8 @@ onMounted(() => {
 .main {
   background: var(--bg-gradient);
   background-attachment: fixed;
-  padding: 28px;
-  margin-left: 224px;
+  padding: 24px;
+  margin-left: 184px;
   flex: 1;
   height: calc(100vh - 84px);
   overflow-y: auto;

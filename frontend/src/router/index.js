@@ -18,6 +18,7 @@ const routes = [
       { path: 'ai-plan', component: () => import('../views/AiPlan.vue') },
       { path: 'history', component: () => import('../views/History.vue') },
       { path: 'chart', component: () => import('../views/Chart.vue') },
+      { path: 'doc-qa', component: () => import('../views/DocQA.vue') },
       { 
         path: 'admin', 
         component: () => import('../views/AdminHome.vue'),

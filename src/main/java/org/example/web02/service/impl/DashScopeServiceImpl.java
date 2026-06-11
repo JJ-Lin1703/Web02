@@ -20,21 +20,40 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.*;
 
+/**
+ * 阿里百炼 DashScope API 服务实现类
+ * 负责调用阿里云大模型进行文本生成和健康计划生成
+ * 支持用户传入API Key或使用环境变量/D配置文件中的默认密钥
+ */
 @Service
 @Slf4j
 public class DashScopeServiceImpl implements DashScopeService {
 
+    /** 阿里百炼文本生成API地址 */
     private static final String API_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation";
 
+    /** 用户健康档案Mapper */
     private final UserHealthMapper userHealthMapper;
+    /** 用户体重记录Mapper */
     private final WeightRecordMapper weightRecordMapper;
+    /** RAG知识库服务（用于检索用户相关健康知识） */
     private final KnowledgeBaseService knowledgeBaseService;
+    /** JSON序列化工具 */
     private final ObjectMapper objectMapper;
+    /** HTTP客户端（复用） */
     private final HttpClient httpClient;
 
+    /** 配置文件中的默认API Key */
     @Value("${dashscope.api-key:}")
     private String defaultApiKey;
 
+    /**
+     * 构造函数注入依赖
+     * @param userHealthMapper 用户健康档案Mapper
+     * @param weightRecordMapper 用户体重记录Mapper
+     * @param knowledgeBaseService RAG知识库服务
+     * @param objectMapper JSON序列化工具
+     */
     public DashScopeServiceImpl(UserHealthMapper userHealthMapper,
                                 WeightRecordMapper weightRecordMapper,
                                 KnowledgeBaseService knowledgeBaseService,
@@ -43,6 +62,7 @@ public class DashScopeServiceImpl implements DashScopeService {
         this.weightRecordMapper = weightRecordMapper;
         this.knowledgeBaseService = knowledgeBaseService;
         this.objectMapper = objectMapper;
+        // 构建HTTP客户端，设置30秒连接超时
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
@@ -58,8 +78,16 @@ public class DashScopeServiceImpl implements DashScopeService {
         return generateText(prompt, maxTokens, null);
     }
 
+    /**
+     * 调用阿里百炼大模型生成文本
+     * @param prompt 提示词
+     * @param maxTokens 最大生成token数
+     * @param apiKey 用户传入的API Key（可选）
+     * @return 模型生成的文本
+     */
     @Override
     public String generateText(String prompt, int maxTokens, String apiKey) {
+        // Step 1: 解析API Key（优先级：用户传入 > 配置文件 > 环境变量）
         String effectiveApiKey = resolveApiKey(apiKey);
 
         if (effectiveApiKey == null || effectiveApiKey.isEmpty()) {
@@ -67,39 +95,45 @@ public class DashScopeServiceImpl implements DashScopeService {
         }
 
         try {
+            // Step 2: 构建请求体
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "qwen-turbo");
+            requestBody.put("model", "qwen-turbo");  // 使用通义千问turbo模型
 
             Map<String, Object> input = new HashMap<>();
             input.put("prompt", prompt);
             requestBody.put("input", input);
 
+            // 参数配置：temperature越低越稳定，top_p控制采样范围
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("result_format", "text");
-            parameters.put("max_tokens", maxTokens);
-            parameters.put("temperature", 0.3);
-            parameters.put("top_p", 0.8);
+            parameters.put("result_format", "text");   // 返回纯文本格式
+            parameters.put("max_tokens", maxTokens);   // 最大生成长度
+            parameters.put("temperature", 0.3);        // 低温度，输出更稳定
+            parameters.put("top_p", 0.8);              // 核采样参数
             requestBody.put("parameters", parameters);
 
             String jsonBody = objectMapper.writeValueAsString(requestBody);
             log.info("AI请求体: {}", jsonBody);
 
+            // Step 3: 构建HTTP请求
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Authorization", "Bearer " + effectiveApiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .timeout(Duration.ofSeconds(120))
+                    .timeout(Duration.ofSeconds(120))  // 2分钟超时
                     .build();
 
+            // Step 4: 发送请求并获取响应
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             log.info("AI响应状态码: {}, 响应体: {}", response.statusCode(), response.body());
 
+            // Step 5: 解析响应
             if (response.statusCode() == 200) {
                 JsonNode responseJson = objectMapper.readTree(response.body());
                 JsonNode output = responseJson.path("output");
                 JsonNode choices = output.path("choices");
                 
+                // 优先解析choices格式（新版API）
                 if (choices.isArray() && choices.size() > 0) {
                     JsonNode message = choices.get(0).path("message");
                     String content = message.path("content").asText();
@@ -108,11 +142,13 @@ public class DashScopeServiceImpl implements DashScopeService {
                     }
                 }
                 
+                // 兼容旧版text字段格式
                 String text = output.path("text").asText();
                 if (text != null && !text.isEmpty()) {
                     return text;
                 }
                 
+                // 兜底返回原始响应
                 return response.body();
             } else {
                 log.error("阿里百炼API调用失败: status={}, body={}", response.statusCode(), response.body());
@@ -124,15 +160,22 @@ public class DashScopeServiceImpl implements DashScopeService {
         }
     }
 
+    /**
+     * 解析API Key，按优先级获取
+     * 优先级：请求传入 > 配置文件 > 环境变量
+     * @param requestApiKey 请求传入的API Key
+     * @return 有效的API Key
+     */
     private String resolveApiKey(String requestApiKey) {
+        // 优先级1：用户请求传入的API Key
         if (requestApiKey != null && !requestApiKey.isEmpty()) {
             return requestApiKey;
         }
-        
+        // 优先级2：配置文件中的默认API Key
         if (defaultApiKey != null && !defaultApiKey.isEmpty()) {
             return defaultApiKey;
         }
-        
+        // 优先级3：环境变量DASHSCOPE_API_KEY
         return System.getenv("DASHSCOPE_API_KEY");
     }
 
@@ -141,15 +184,25 @@ public class DashScopeServiceImpl implements DashScopeService {
         return generateHealthPlan(userId, null);
     }
 
+    /**
+     * 生成个性化健康计划（核心方法）
+     * 整合用户健康档案、历史体重数据和RAG知识库，调用大模型生成一周饮食运动计划
+     * @param userId 用户ID
+     * @param apiKey 用户传入的API Key（可选）
+     * @return 包含计划标题、总热量、计划内容等的Map
+     */
     @Override
     public Map<String, Object> generateHealthPlan(Long userId, String apiKey) {
+        // Step 1: 查询用户健康档案
         UserHealth health = userHealthMapper.findByUserId(userId);
         if (health == null) {
             throw new RuntimeException("用户健康档案不存在，请先完善健康信息");
         }
 
+        // Step 2: 查询用户近30天体重记录（用于分析趋势）
         List<WeightRecord> recentWeight = weightRecordMapper.findRecent30DaysWeight(userId);
 
+        // Step 3: 构建用户上下文信息（健康档案）
         StringBuilder context = new StringBuilder();
         context.append("用户健康档案信息：\n");
         context.append("1. 年龄：").append(health.getAge()).append("岁\n");
@@ -165,6 +218,7 @@ public class DashScopeServiceImpl implements DashScopeService {
         context.append("11. 每日总能量消耗(TDEE)：").append(health.getTdee() != null ? health.getTdee().intValue() : "未计算").append("kcal\n");
         context.append("12. BMI指数：").append(health.getBmi() != null ? health.getBmi() : "未计算").append("\n");
 
+        // 添加近30天体重记录
         if (recentWeight != null && !recentWeight.isEmpty()) {
             context.append("\n近30天体重记录（共").append(recentWeight.size()).append("条）：\n");
             for (WeightRecord record : recentWeight) {
@@ -173,9 +227,12 @@ public class DashScopeServiceImpl implements DashScopeService {
             context.append("\n");
         }
 
+        // Step 4: RAG检索 - 根据用户标签从知识库获取相关健康知识
         log.warn("=== RAG DEBUG: 准备检索知识库, userId={} ===", userId);
         List<KnowledgeBase> ragKnowledge = knowledgeBaseService.retrieveRelevantKnowledge(userId);
         log.warn("=== RAG DEBUG: 检索完成, 结果数量={} ===", ragKnowledge != null ? ragKnowledge.size() : 0);
+        
+        // 将检索到的知识追加到上下文
         if (ragKnowledge != null && !ragKnowledge.isEmpty()) {
             context.append("\n【权威健康知识库参考】（请结合以下专业知识制定计划）：\n");
             for (int i = 0; i < ragKnowledge.size(); i++) {
@@ -185,6 +242,7 @@ public class DashScopeServiceImpl implements DashScopeService {
             }
         }
 
+        // Step 5: 构建完整的Prompt（角色定义+上下文+格式要求）
         String prompt = "你现在是一名专业营养师+持证健身教练。\n" +
                 "根据用户提供的健康档案、代谢数据、历史体重、打卡记录以及权威健康知识库内容，为用户生成科学、安全、个性化的一周饮食与运动计划。\n" +
                 "要求内容严谨、条理清晰，贴合用户饮食偏好、过敏禁忌与健康目标。\n" +
@@ -223,14 +281,17 @@ public class DashScopeServiceImpl implements DashScopeService {
                 "5. 每天必须提供3项运动安排，每项运动不重复，同时要求这些运动安排要符合实际且具体、细致\n" +
                 "6. 每天的饮食安排要符合实际，食材来源易获取，符合中国国内人民的饮食习惯，三餐的安排要符合中国膳食比例，讲究早上吃好、中午吃饱、晚上吃少";
 
+        // Step 6: 调用大模型并处理响应（含降级策略）
         Map<String, Object> result = new HashMap<>();
         result.put("healthInfo", context.toString());
 
         try {
+            // 调用大模型生成计划
             String response = generateText(prompt, 3000, apiKey);
             log.info("AI响应原始内容: {}", response);
             result.put("rawResponse", response);
 
+            // 从响应中提取JSON
             String jsonStr = extractJsonFromResponse(response);
             log.info("提取的JSON字符串: {}", jsonStr);
             
@@ -238,15 +299,17 @@ public class DashScopeServiceImpl implements DashScopeService {
                 try {
                     Map<String, Object> planData = objectMapper.readValue(jsonStr, Map.class);
                     
+                    // 验证JSON结构完整性
                     if (planData.containsKey("planTitle") || planData.containsKey("weeklyPlan")) {
                         result.put("planTitle", planData.getOrDefault("planTitle", "个性化健康计划"));
+                        // 安全转换总热量，默认使用TDEE或2000kcal
                         result.put("totalCalorie", safeToInteger(planData.get("totalCalorie"),
                                 health.getTdee() != null ? health.getTdee().intValue() : 2000));
 
+                        // 构建计划内容（仅保留summary和weeklyPlan）
                         Map<String, Object> planContentMap = new HashMap<>();
                         planContentMap.put("summary", planData.get("summary"));
                         planContentMap.put("weeklyPlan", planData.get("weeklyPlan"));
-
                         result.put("planContent", objectMapper.writeValueAsString(planContentMap));
                         log.info("成功使用AI生成的计划");
                     } else {
@@ -262,11 +325,13 @@ public class DashScopeServiceImpl implements DashScopeService {
                 throw new RuntimeException("无法从AI响应中提取JSON");
             }
         } catch (Exception e) {
+            // 降级策略：AI服务不可用时使用本地生成的默认计划
             log.warn("AI服务调用或解析失败，使用默认计划: {}", e.getMessage());
             result.put("planTitle", "个性化健康计划");
             result.put("totalCalorie", health.getTdee() != null ? health.getTdee().intValue() : 2000);
             result.put("rawResponse", "AI服务不可用: " + e.getMessage());
 
+            // 生成本地默认计划
             Map<String, Object> fallbackPlan = generateFallbackPlan(health);
             try {
                 result.put("planContent", objectMapper.writeValueAsString(fallbackPlan));

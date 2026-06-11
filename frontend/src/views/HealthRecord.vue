@@ -377,27 +377,27 @@ onMounted(() => {
 .form-wrapper { max-width: 800px; margin: 0 auto; }
 .form-header { display: flex; align-items: center; gap: 20px; padding: 32px; background: linear-gradient(135deg, #409eff 0%, #67c23a 100%); border-radius: 24px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(64, 158, 255, 0.3); }
 .header-icon { width: 72px; height: 72px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.header-text h2 { font-size: 31px; font-weight: 700; color: #ffffff; margin: 0 0 8px 0; }
-.header-text p { font-size: 19px; color: rgba(255, 255, 255, 0.9); margin: 0; }
+.header-text h2 { font-size: 26px; font-weight: 700; color: #ffffff; margin: 0 0 6px 0; }
+.header-text p { font-size: 15px; color: rgba(255, 255, 255, 0.9); margin: 0; }
 .form-card { border: none; border-radius: 24px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); overflow: hidden; }
 .form-card :deep(.el-card__body) { padding: 32px; }
 .form-section { margin-bottom: 32px; }
 .form-section:last-of-type { margin-bottom: 0; }
-.section-title { display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 700; color: #333; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #f0ece6; }
-.form-field { display: flex; flex-direction: column; gap: 10px; }
-.field-label { font-size: 19px; font-weight: 600; color: #4a4a4a; display: flex; align-items: center; gap: 8px; }
-.field-unit { font-size: 17px; font-weight: 500; color: #909399; margin-left: 4px; }
-.field-hint { font-size: 16px; font-weight: 400; color: #909399; margin-left: 8px; }
-.field-input { font-size: 19px; padding: 16px 20px; border-radius: 14px; border: 2px solid #e8e8e8; transition: all 0.3s ease; background: #ffffff; }
+.section-title { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; color: #333; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #f0ece6; }
+.form-field { display: flex; flex-direction: column; gap: 8px; }
+.field-label { font-size: 15px; font-weight: 600; color: #4a4a4a; display: flex; align-items: center; gap: 6px; }
+.field-unit { font-size: 14px; font-weight: 500; color: #909399; margin-left: 4px; }
+.field-hint { font-size: 13px; font-weight: 400; color: #909399; margin-left: 6px; }
+.field-input { font-size: 15px; padding: 12px 16px; border-radius: 12px; border: 2px solid #e8e8e8; transition: all 0.3s ease; background: #ffffff; }
 .field-input:focus { border-color: #409eff; box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.1); }
 .field-input-multiple { min-height: 56px; }
 .field-input-textarea { resize: vertical; }
 
-.form-card :deep(.el-input__inner), .form-card :deep(.el-select__inner) { font-size: 19px; padding: 16px 20px; border-radius: 14px; border: 2px solid #e8e8e8; transition: all 0.3s ease; }
+.form-card :deep(.el-input__inner), .form-card :deep(.el-select__inner) { font-size: 15px; padding: 12px 16px; border-radius: 12px; border: 2px solid #e8e8e8; transition: all 0.3s ease; }
 .form-card :deep(.el-input__inner):focus, .form-card :deep(.el-select__inner):focus { border-color: #409eff; box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.1); }
-.form-card :deep(.el-textarea__inner) { font-size: 19px; padding: 16px 20px; border-radius: 14px; border: 2px solid #e8e8e8; transition: all 0.3s ease; }
+.form-card :deep(.el-textarea__inner) { font-size: 15px; padding: 12px 16px; border-radius: 12px; border: 2px solid #e8e8e8; transition: all 0.3s ease; }
 .form-card :deep(.el-textarea__inner):focus { border-color: #409eff; box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.1); }
-.form-card :deep(.el-select--multiple) .el-tag { margin: 6px 8px 6px 0; padding: 8px 14px; font-size: 18px; border-radius: 20px; background: rgba(64, 158, 255, 0.1); border: 1px solid rgba(64, 158, 255, 0.3); color: #409eff; }
+.form-card :deep(.el-select--multiple) .el-tag { margin: 4px 6px 4px 0; padding: 6px 10px; font-size: 14px; border-radius: 16px; background: rgba(64, 158, 255, 0.1); border: 1px solid rgba(64, 158, 255, 0.3); color: #409eff; }
 
 .bmi-display { margin-top: 20px; }
 .bmi-card { display: flex; flex-direction: column; align-items: center; padding: 24px; border-radius: 20px; color: #ffffff; transition: transform 0.3s ease; }
@@ -406,20 +406,20 @@ onMounted(() => {
 .bmi-underweight { background: linear-gradient(135deg, #faad14 0%, #ffc53d 100%); }
 .bmi-overweight { background: linear-gradient(135deg, #faad14 0%, #ffc53d 100%); }
 .bmi-obese { background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%); }
-.bmi-label { font-size: 16px; font-weight: 500; opacity: 0.9; margin-bottom: 8px; }
-.bmi-value { font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
-.bmi-desc { font-size: 15px; opacity: 0.95; }
+.bmi-label { font-size: 14px; font-weight: 500; opacity: 0.9; margin-bottom: 6px; }
+.bmi-value { font-size: 38px; font-weight: 800; line-height: 1.1; margin-bottom: 6px; }
+.bmi-desc { font-size: 13px; opacity: 0.95; }
 
 .goal-options { display: flex; gap: 16px; flex-wrap: wrap; }
 .goal-option { flex: 1; min-width: 200px; padding: 20px; border-radius: 16px; border: 2px solid #f0ece6; cursor: pointer; transition: all 0.3s ease; text-align: center; }
 .goal-option:hover { border-color: #409eff; background: rgba(64, 158, 255, 0.02); }
 .goal-option.active { border-color: #409eff; background: rgba(64, 158, 255, 0.05); box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15); }
-.goal-icon { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-.goal-name { font-size: 19px; font-weight: 600; color: #333; margin-bottom: 6px; }
-.goal-desc { font-size: 16px; color: #909399; }
+.goal-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.goal-name { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 5px; }
+.goal-desc { font-size: 13px; color: #909399; }
 
 .form-actions { display: flex; gap: 16px; margin-top: 36px; padding-top: 24px; border-top: 1px solid #f0ece6; }
-.form-actions :deep(.el-button) { padding: 14px 36px; font-size: 19px; font-weight: 600; border-radius: 14px; display: flex; align-items: center; gap: 8px; }
+.form-actions :deep(.el-button) { padding: 11px 28px; font-size: 15px; font-weight: 600; border-radius: 12px; display: flex; align-items: center; gap: 6px; }
 .form-actions :deep(.el-button--primary) { background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%); border: none; box-shadow: 0 4px 16px rgba(64, 158, 255, 0.3); }
 .form-actions :deep(.el-button--primary):hover { background: linear-gradient(135deg, #3395ff 0%, #59a8ff 100%); box-shadow: 0 6px 20px rgba(64, 158, 255, 0.4); transform: translateY(-2px); }
 .form-actions :deep(.el-button--default) { border: 2px solid #e8e8e8; color: #666; }

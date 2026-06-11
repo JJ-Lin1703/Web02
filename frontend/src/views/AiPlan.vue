@@ -461,7 +461,7 @@ onMounted(() => {
 }
 
 .card-title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -484,8 +484,8 @@ onMounted(() => {
 }
 
 .plan-header h2 {
-  margin: 0 0 16px 0;
-  font-size: 32px;
+  margin: 0 0 12px 0;
+  font-size: 26px;
   color: #303133;
 }
 
@@ -533,12 +533,12 @@ onMounted(() => {
 }
 
 .day-tab-name {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
 }
 
 .day-tab-date {
-  font-size: 15px;
+  font-size: 13px;
   opacity: 0.7;
 }
 
@@ -553,13 +553,13 @@ onMounted(() => {
 }
 
 .day-name {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: #409eff;
 }
 
 .day-date {
-  font-size: 17px;
+  font-size: 14px;
   color: #909399;
 }
 
@@ -572,8 +572,8 @@ onMounted(() => {
 }
 
 .section h4 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
+  margin: 0 0 6px 0;
+  font-size: 15px;
   color: #606266;
   display: flex;
   align-items: center;
@@ -604,9 +604,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  padding: 12px 8px;
-  font-size: 16px;
+  width: 48px;
+  padding: 10px 6px;
+  font-size: 14px;
   font-weight: 600;
   color: #fff;
   background: #26B5B5;
@@ -663,22 +663,22 @@ onMounted(() => {
 .meal-name {
   flex: 1;
   color: #303133;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .meal-calorie {
   color: #67c23a;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .ex-name {
   color: #303133;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .ex-duration {
   color: #e6a23c;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .detail-content {
@@ -691,8 +691,8 @@ onMounted(() => {
   white-space: pre-wrap;
   word-break: break-all;
   margin: 0;
-  font-size: 18px;
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.6;
   color: #303133;
 }
 
@@ -705,16 +705,16 @@ onMounted(() => {
 }
 
 .tweak-preview-label {
-  margin: 0 0 6px 0;
-  font-size: 16px;
+  margin: 0 0 5px 0;
+  font-size: 14px;
   color: #909399;
 }
 
 .tweak-preview-text {
   margin: 0;
-  font-size: 17px;
+  font-size: 14px;
   color: #303133;
-  line-height: 1.8;
+  line-height: 1.6;
 }
 
 .tweak-preview-text strong {
@@ -730,22 +730,22 @@ onMounted(() => {
 }
 
 .tweak-section-label {
-  margin: 0 0 8px 0;
-  font-size: 16px;
+  margin: 0 0 6px 0;
+  font-size: 14px;
   color: #909399;
 }
 
 .tweak-original-items {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .tweak-original-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 17px;
+  gap: 8px;
+  font-size: 14px;
 }
 
 .tweak-original-name {
@@ -754,7 +754,7 @@ onMounted(() => {
 
 .tweak-original-extra {
   color: #909399;
-  font-size: 16px;
+  font-size: 13px;
   margin-left: auto;
 }
 </style>

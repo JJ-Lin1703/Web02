@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.web02.mapper.DocumentChunkMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.web02.entity.DocumentChunk">
+        <id column="id" property="id"/>
+        <result column="doc_id" property="docId"/>
+        <result column="doc_name" property="docName"/>
+        <result column="chunk_index" property="chunkIndex"/>
+        <result column="chunk_text" property="chunkText"/>
+        <result column="embedding" property="embedding"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO document_chunks (doc_id, doc_name, chunk_index, chunk_text, embedding)
+        VALUES (#{docId}, #{docName}, #{chunkIndex}, #{chunkText}, #{embedding})
+    </insert>
+
+    <insert id="insertBatch">
+        INSERT INTO document_chunks (doc_id, doc_name, chunk_index, chunk_text, embedding)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.docId}, #{item.docName}, #{item.chunkIndex}, #{item.chunkText}, #{item.embedding})
+        </foreach>
+    </insert>
+
+    <select id="findByDocId" resultMap="BaseResultMap">
+        SELECT id, doc_id, doc_name, chunk_index, chunk_text, embedding, create_time
+        FROM document_chunks
+        WHERE doc_id = #{docId}
+        ORDER BY chunk_index
+    </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT id, doc_id, doc_name, chunk_index, chunk_text, embedding, create_time
+        FROM document_chunks
+        ORDER BY doc_id, chunk_index
+    </select>
+
+    <select id="findDistinctDocs" resultType="string">
+        SELECT DISTINCT doc_name FROM document_chunks ORDER BY doc_name
+    </select>
+
+    <delete id="deleteByDocId">
+        DELETE FROM document_chunks WHERE doc_id = #{docId}
+    </delete>
+
+</mapper>
