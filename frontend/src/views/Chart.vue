@@ -91,52 +91,81 @@
 </template>
 
 <script setup>
+/**
+ * @file Chart.vue
+ * @description 数据可视化页面，展示体重变化曲线、打卡完成率、热量摄入参考等图表
+ * @author SmartHealth Team
+ * @date 2024
+ */
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import { getWeightHistory, getWeeklyStats } from '@/api/user'
 import EmptyState from '@/components/EmptyState.vue'
 
+// 当前图表索引（0-体重曲线，1-打卡完成率，2-热量参考）
 const currentIndex = ref(0)
+// 时间筛选类型
 const filterType = ref('7days')
 
-// 直接定义ref
+// 图表DOM引用
 const weightChartRef = ref(null)
 const completionChartRef = ref(null)
 const calorieChartRef = ref(null)
 
+// 加载状态
 const weightLoading = ref(false)
 const completionLoading = ref(false)
 const calorieLoading = ref(false)
 
+// 空状态标识
 const weightEmpty = ref(false)
 const completionEmpty = ref(false)
 const calorieEmpty = ref(false)
 
+// 图表实例
 let weightChartInstance = null
 let completionChartInstance = null
 let calorieChartInstance = null
 
+/**
+ * 上一张图表
+ */
 const prevChart = () => {
   if (currentIndex.value > 0) {
     currentIndex.value--
   }
 }
 
+/**
+ * 下一张图表
+ */
 const nextChart = () => {
   if (currentIndex.value < 2) {
     currentIndex.value++
   }
 }
 
+/**
+ * 跳转到指定图表
+ * @param {number} index - 图表索引
+ */
 const goToChart = (index) => {
   currentIndex.value = index
 }
 
+/**
+ * 设置时间筛选类型
+ * @param {string} type - 筛选类型：7days 或 30days
+ */
 const setFilter = (type) => {
   filterType.value = type
   fetchWeightData()
 }
 
+/**
+ * 获取日期范围
+ * @returns {object} 日期范围对象
+ */
 const getDateRange = () => {
   const now = new Date()
   let startDate = null
@@ -153,6 +182,9 @@ const getDateRange = () => {
   }
 }
 
+/**
+ * 获取体重数据并渲染图表
+ */
 const fetchWeightData = async () => {
   weightLoading.value = true
   weightEmpty.value = false
@@ -186,6 +218,9 @@ const fetchWeightData = async () => {
   }
 }
 
+/**
+ * 获取打卡完成率数据并渲染图表
+ */
 const fetchCompletionData = async () => {
   completionLoading.value = true
   completionEmpty.value = false
@@ -216,6 +251,9 @@ const fetchCompletionData = async () => {
   }
 }
 
+/**
+ * 获取热量数据并渲染图表
+ */
 const fetchCalorieData = async () => {
   calorieLoading.value = true
   try {
@@ -235,6 +273,10 @@ const fetchCalorieData = async () => {
   }
 }
 
+/**
+ * 渲染体重曲线图表
+ * @param {Array} data - 体重数据数组
+ */
 const renderWeightChart = (data) => {
   if (!weightChartRef.value) return
   
@@ -289,6 +331,10 @@ const renderWeightChart = (data) => {
   weightChartInstance.setOption(option)
 }
 
+/**
+ * 渲染打卡完成率图表
+ * @param {Array} weekRecords - 周打卡记录数组
+ */
 const renderCompletionChart = (weekRecords) => {
   if (!completionChartRef.value) return
   
@@ -336,6 +382,10 @@ const renderCompletionChart = (weekRecords) => {
   completionChartInstance.setOption(option)
 }
 
+/**
+ * 渲染热量摄入饼图
+ * @param {object} data - 热量数据对象
+ */
 const renderCalorieChart = (data) => {
   if (!calorieChartRef.value) return
   
@@ -373,18 +423,28 @@ const renderCalorieChart = (data) => {
   calorieChartInstance.setOption(option)
 }
 
+/**
+ * 销毁图表实例
+ * @param {object} chartInstance - 图表实例
+ */
 const disposeChart = (chartInstance) => {
   if (chartInstance) {
     chartInstance.dispose()
   }
 }
 
+/**
+ * 处理窗口大小变化，调整图表尺寸
+ */
 const handleResize = () => {
   if (weightChartInstance) weightChartInstance.resize()
   if (completionChartInstance) completionChartInstance.resize()
   if (calorieChartInstance) calorieChartInstance.resize()
 }
 
+/**
+ * 初始化当前可见的图表
+ */
 const initVisibleChart = async () => {
   await nextTick()
   switch (currentIndex.value) {
@@ -400,18 +460,27 @@ const initVisibleChart = async () => {
   }
 }
 
+/**
+ * 监听图表索引变化
+ */
 watch(currentIndex, async () => {
   await nextTick()
   handleResize()
   initVisibleChart()
 })
 
+/**
+ * 页面初始化
+ */
 onMounted(async () => {
   await nextTick()
   initVisibleChart()
   window.addEventListener('resize', handleResize)
 })
 
+/**
+ * 页面卸载，清理资源
+ */
 onUnmounted(() => {
   if (weightChartInstance) weightChartInstance.dispose()
   if (completionChartInstance) completionChartInstance.dispose()

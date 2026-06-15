@@ -237,6 +237,12 @@
 </template>
 
 <script setup>
+/**
+ * @file AiPlan.vue
+ * @description AI健康计划页面，包含一周计划展示、计划详情、计划编辑和微调功能
+ * @author SmartHealth Team
+ * @date 2024
+ */
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Bowl, TrendCharts, Edit } from '@element-plus/icons-vue'
@@ -244,9 +250,10 @@ import { Vue3Lottie } from 'vue3-lottie'
 import { generateAiPlan, getLatestAiPlan, exportAiPlanPdf, tweakAiPlan, updateAiPlanContent } from '@/api/user'
 import EmptyState from '@/components/EmptyState.vue'
 
+// 当前激活的标签页：plan(一周计划) / detail(计划详情)
 const activeTab = ref('plan')
-const loading = ref(false)
-const generating = ref(false)
+const loading = ref(false)           // 页面加载状态
+const generating = ref(false)        // 生成计划加载状态
 const exporting = ref(false)
 const editing = ref(false)
 const currentPlan = ref(null)
@@ -303,6 +310,9 @@ const selectedDayData = computed(() => {
   return weeklyPlanData.value.find(d => d.dayName === selectedDay.value)
 })
 
+/**
+ * 获取最新的AI健康计划
+ */
 const fetchLatestPlan = async () => {
   loading.value = true
   try {
@@ -315,6 +325,9 @@ const fetchLatestPlan = async () => {
   }
 }
 
+/**
+ * 生成新的AI健康计划
+ */
 const handleGeneratePlan = async () => {
   generating.value = true
   try {
@@ -328,6 +341,11 @@ const handleGeneratePlan = async () => {
   }
 }
 
+/**
+ * 格式化计划内容为可读格式
+ * @param {string} content - JSON格式的计划内容
+ * @returns {string} 格式化后的字符串
+ */
 const formatPlanContent = (content) => {
   if (!content) return ''
   try {
@@ -338,6 +356,9 @@ const formatPlanContent = (content) => {
   }
 }
 
+/**
+ * 解析计划详情文本数据
+ */
 const planDetailText = computed(() => {
   if (!currentPlan.value?.planContent) return null
   try {
@@ -363,6 +384,9 @@ const planDetailText = computed(() => {
   }
 })
 
+/**
+ * 导出计划为PDF
+ */
 const handleExportPdf = async () => {
   if (!currentPlan.value) {
     ElMessage.warning('请先生成健康计划')
@@ -386,8 +410,11 @@ const handleExportPdf = async () => {
 // ==================== 微调计划 ====================
 const dayOptions = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
+// 微调对话框可见性
 const tweakDialogVisible = ref(false)
+// 微调加载状态
 const tweaking = ref(false)
+// 微调表单
 const tweakForm = ref({
   dayName: '',
   module: '',
@@ -395,6 +422,9 @@ const tweakForm = ref({
   reason: ''
 })
 
+/**
+ * 获取微调的原始内容
+ */
 const tweakOriginalContent = computed(() => {
   if (!weeklyPlanData.value || !tweakForm.value.dayName || !tweakForm.value.module) return null
   const day = weeklyPlanData.value.find(d => d.dayName === tweakForm.value.dayName)
@@ -402,8 +432,16 @@ const tweakOriginalContent = computed(() => {
   return tweakForm.value.module === '饮食' ? day.diet : day.exercise
 })
 
+/**
+ * 是否为饮食模块微调
+ */
 const tweakIsDiet = computed(() => tweakForm.value.module === '饮食')
 
+/**
+ * 打开编辑对话框
+ * @param {string} type - 编辑类型：diet 或 exercise
+ * @param {number} index - 编辑项索引
+ */
 const openEditDialog = (type, index) => {
   editType.value = type
   editIndex.value = index
@@ -423,6 +461,9 @@ const openEditDialog = (type, index) => {
   editDialogVisible.value = true
 }
 
+/**
+ * 提交编辑内容
+ */
 const handleEditSubmit = async () => {
   if (!editForm.value.name) {
     ElMessage.warning('请输入名称')
@@ -467,11 +508,17 @@ const handleEditSubmit = async () => {
   }
 }
 
+/**
+ * 显示微调对话框
+ */
 const showTweakDialog = () => {
   tweakForm.value = { dayName: '', module: '', itemDesc: '', reason: '' }
   tweakDialogVisible.value = true
 }
 
+/**
+ * 提交微调请求
+ */
 const handleTweakSubmit = async () => {
   if (!tweakForm.value.dayName || !tweakForm.value.module) {
     ElMessage.warning('请选择星期和模块')
@@ -500,6 +547,9 @@ const handleTweakSubmit = async () => {
   }
 }
 
+/**
+ * 页面初始化
+ */
 onMounted(() => {
   fetchLatestPlan()
 })

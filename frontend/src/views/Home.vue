@@ -297,7 +297,14 @@
   </div>
 </template>
 
-<script setup>import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
+<script setup>
+/**
+ * @file Home.vue
+ * @description 首页工作台，展示健康数据指标、今日打卡任务、AI建议等
+ * @author SmartHealth Team
+ * @date 2024
+ */
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { TrendCharts, ScaleToOriginal, CircleCheck, Check, Lightning, DataAnalysis, ArrowDown, ArrowUp, Minus, Loading, Bowl, MoreFilled, FirstAidKit, Edit } from '@element-plus/icons-vue';
@@ -305,28 +312,63 @@ import * as echarts from 'echarts';
 import { getHealthRecord, getLatestAiPlan, saveClockRecord, getTodayClockRecord, getWeeklyStats } from '@/api/user';
 import EmptyState from '@/components/EmptyState.vue';
 
+/** Vue Router 路由实例，用于页面跳转 */
 const router = useRouter();
 
+/**
+ * 跳转到健康档案页面
+ */
 const goToHealthRecord = () => {
   router.push('/record');
 };
+
+/** 健康档案数据（包含BMI、BMR、TDEE等指标） */
 const healthRecord = ref(null);
+
+/** AI计划总结（饮食建议、运动建议、健康提示） */
 const aiSummary = ref(null);
+
+/** 建议热量摄入范围（减肥/增肌/维持健康） */
 const calorieRange = ref(null);
+
+/** 每日任务列表 */
 const dailyTasks = ref([]);
+
+/** 任务加载状态 */
 const loadingTasks = ref(false);
+
+/** 今日日期显示文本 */
 const todayDate = ref('');
+
+/** 当前AI计划ID */
 const currentPlanId = ref(null);
+
+/** 跳过任务对话框可见性 */
 const skipDialogVisible = ref(false);
+
+/** 跳过任务表单 */
 const skipForm = reactive({
- reason: '',
- note: ''
+  reason: '',  // 跳过原因
+  note: ''     // 备注说明
 });
+
+/** 当前正在处理跳过的任务 */
 const currentSkipTask = ref(null);
+
+/** 图表容器引用 */
 const chartRef = ref(null);
+
+/** ECharts图表实例 */
 let chartInstance = null;
+
+/** 饮食任务列表（从每日任务中筛选） */
 const dietTasks = computed(() => dailyTasks.value.filter(t => t.type === '饮食'));
+
+/** 运动任务列表（从每日任务中筛选） */
 const exerciseTasks = computed(() => dailyTasks.value.filter(t => t.type === '运动'));
+/**
+ * 计算饮食总热量
+ */
 const dietTotalCalorie = computed(() => {
  return dietTasks.value.reduce((sum, task) => {
    const calorie = task.calorie;
@@ -340,22 +382,35 @@ const dietTotalCalorie = computed(() => {
    return sum + value;
  }, 0);
 });
+
+/** 周统计数据 */
 const weeklyStatsData = reactive({
- completed: 0,
- total: 0
+  completed: 0,  // 本周已完成任务数
+  total: 0       // 本周总任务数
 });
+
+/** 周打卡记录列表 */
 const weeklyRecords = ref([]);
 
+/**
+ * 每日统计数据（计算属性）
+ * 返回今日完成率和本周累计完成情况
+ */
 const dailyStats = computed(() => {
- const todayCompleted = dailyTasks.value.filter(t => t.completed).length;
- const todayTotal = dailyTasks.value.length;
- const todayCompletionRate = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
- return {
- todayCompletionRate,
- weekCompleted: weeklyStatsData.completed,
- weekTotal: weeklyStatsData.total
- };
+  const todayCompleted = dailyTasks.value.filter(t => t.completed).length;
+  const todayTotal = dailyTasks.value.length;
+  const todayCompletionRate = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
+  
+  return {
+    todayCompletionRate,   // 今日完成率
+    weekCompleted: weeklyStatsData.completed,  // 本周已完成
+    weekTotal: weeklyStatsData.total           // 本周总数
+  };
 });
+
+/**
+ * 获取健康档案
+ */
 const fetchHealthRecord = async () => {
  try {
  const res = await getHealthRecord();
@@ -372,6 +427,11 @@ const fetchHealthRecord = async () => {
  catch {
  }
 };
+/**
+ * 根据BMI值获取卡片样式类名
+ * @param {number} bmi - BMI值
+ * @returns {string} 样式类名
+ */
 const getBmiClass = (bmi) => {
  if (bmi < 18.5)
  return 'metric-card-underweight';
@@ -381,6 +441,12 @@ const getBmiClass = (bmi) => {
  return 'metric-card-overweight';
  return 'metric-card-obese';
 };
+
+/**
+ * 根据BMI值获取描述文本
+ * @param {number} bmi - BMI值
+ * @returns {string} 描述文本
+ */
 const getBmiDescription = (bmi) => {
  if (bmi < 18.5)
  return '偏瘦，建议增加营养摄入';
@@ -390,6 +456,10 @@ const getBmiDescription = (bmi) => {
  return '偏胖，建议控制饮食';
  return '肥胖，建议就医咨询';
 };
+
+/**
+ * 获取AI计划总结
+ */
 const fetchAiSummary = async () => {
  try {
  const res = await getLatestAiPlan();
@@ -401,6 +471,10 @@ const fetchAiSummary = async () => {
  catch {
  }
 };
+
+/**
+ * 获取每日任务列表
+ */
 const fetchDailyTasks = async () => {
  loadingTasks.value = true;
  try {
@@ -456,250 +530,322 @@ const fetchDailyTasks = async () => {
  }
 };
 
+/**
+ * 加载今日打卡记录
+ * 从后端获取已完成和跳过的任务状态
+ */
 const loadTodayClockRecord = async () => {
- if (!currentPlanId.value) return;
- try {
- const res = await getTodayClockRecord(currentPlanId.value);
- if (res.data) {
- const finishItems = JSON.parse(res.data.finishItem || '[]');
- const unfinishReasons = JSON.parse(res.data.unfinishReason || '{}');
- 
- dailyTasks.value.forEach(task => {
- const finished = finishItems.find(item => item.name === task.name);
- if (finished) {
- task.completed = true;
- }
- const reason = unfinishReasons[task.name];
- if (reason) {
- task.skipped = true;
- task.skipReason = reason;
- }
- });
- updateChart();
- }
- } catch {
- // 没有记录时忽略错误
- }
+  if (!currentPlanId.value) return;
+  
+  try {
+    const res = await getTodayClockRecord(currentPlanId.value);
+    
+    if (res.data) {
+      // 解析已完成的任务列表
+      const finishItems = JSON.parse(res.data.finishItem || '[]');
+      // 解析跳过的任务原因
+      const unfinishReasons = JSON.parse(res.data.unfinishReason || '{}');
+      
+      // 更新任务状态
+      dailyTasks.value.forEach(task => {
+        // 标记已完成的任务
+        const finished = finishItems.find(item => item.name === task.name);
+        if (finished) {
+          task.completed = true;
+        }
+        
+        // 标记跳过的任务
+        const reason = unfinishReasons[task.name];
+        if (reason) {
+          task.skipped = true;
+          task.skipReason = reason;
+        }
+      });
+      
+      // 更新图表
+      updateChart();
+    }
+  } catch {
+    // 没有记录时忽略错误
+  }
 };
+
+/**
+ * 切换任务完成状态
+ * @param {object} task - 任务对象
+ */
 const toggleTask = (task) => {
- if (task.skipped)
- return;
- task.completed = !task.completed;
- updateChart();
- saveTasksToServer();
+  // 已跳过的任务不能切换状态
+  if (task.skipped) return;
+  
+  // 切换完成状态
+  task.completed = !task.completed;
+  
+  // 更新图表和保存到服务器
+  updateChart();
+  saveTasksToServer();
 };
+
+/**
+ * 处理任务操作（跳过/重置）
+ * @param {object} task - 任务对象
+ * @param {string} action - 操作类型（skip/reset）
+ */
 const handleTaskAction = (task, action) => {
- if (action === 'skip') {
- currentSkipTask.value = task;
- skipForm.reason = '';
- skipForm.note = '';
- skipDialogVisible.value = true;
- }
- else if (action === 'reset') {
- task.completed = false;
- task.skipped = false;
- task.skipReason = '';
- updateChart();
- }
+  if (action === 'skip') {
+    // 打开跳过对话框
+    currentSkipTask.value = task;
+    skipForm.reason = '';
+    skipForm.note = '';
+    skipDialogVisible.value = true;
+  } else if (action === 'reset') {
+    // 重置任务状态
+    task.completed = false;
+    task.skipped = false;
+    task.skipReason = '';
+    updateChart();
+  }
 };
+
+/**
+ * 确认跳过任务
+ */
 const confirmSkip = () => {
- if (!skipForm.reason) {
- ElMessage.warning('请选择跳过原因');
- return;
- }
- if (currentSkipTask.value) {
- currentSkipTask.value.skipped = true;
- currentSkipTask.value.skipReason = skipForm.reason;
- if (skipForm.note) {
- currentSkipTask.value.skipReason += ` - ${skipForm.note}`;
- }
- }
- skipDialogVisible.value = false;
- updateChart();
- saveTasksToServer();
+  // 验证跳过原因
+  if (!skipForm.reason) {
+    ElMessage.warning('请选择跳过原因');
+    return;
+  }
+  
+  // 设置任务跳过状态
+  if (currentSkipTask.value) {
+    currentSkipTask.value.skipped = true;
+    currentSkipTask.value.skipReason = skipForm.reason;
+    
+    // 附加备注说明
+    if (skipForm.note) {
+      currentSkipTask.value.skipReason += ` - ${skipForm.note}`;
+    }
+  }
+  
+  // 关闭对话框并保存
+  skipDialogVisible.value = false;
+  updateChart();
+  saveTasksToServer();
 };
 
+/**
+ * 保存打卡记录到服务器
+ */
 const saveTasksToServer = async () => {
- if (!currentPlanId.value) return;
- 
- const finishItems = dailyTasks.value
- .filter(t => t.completed)
- .map(t => ({
- id: t.id,
- type: t.type,
- name: t.name,
- mealType: t.mealType,
- calorie: t.calorie,
- duration: t.duration
- }));
- 
- const totalItems = dailyTasks.value
- .map(t => ({
- id: t.id,
- type: t.type,
- name: t.name,
- mealType: t.mealType,
- calorie: t.calorie,
- duration: t.duration
- }));
- 
- const unfinishReasons = {};
- dailyTasks.value
- .filter(t => t.skipped && t.skipReason)
- .forEach(t => {
- unfinishReasons[t.name] = t.skipReason;
- });
- 
- try {
- await saveClockRecord({
- planId: currentPlanId.value,
- finishItems,
- totalItems,
- unfinishReasons
- });
- await fetchWeeklyStats();
- } catch (error) {
- console.error('保存打卡记录失败', error);
- }
-};
-const initChart = () => {
- if (!chartRef.value)
- return;
- chartInstance = echarts.init(chartRef.value);
- updateChart();
-};
-const updateChart = () => {
- if (!chartInstance)
- return;
- const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
- const today = new Date();
- const dayOfWeek = today.getDay();
- const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
- 
- // 初始化近7天完成率数组（默认为0）
- const completionRates = [0, 0, 0, 0, 0, 0, 0];
- 
- // 从后端获取的打卡记录中提取每天的完成率
- weeklyRecords.value.forEach(record => {
- const recordDate = new Date(record.recordDate);
- const recordDayOfWeek = recordDate.getDay();
- const recordDayIndex = recordDayOfWeek === 0 ? 6 : recordDayOfWeek - 1;
- 
- // 使用后端计算的 finishRate
- if (record.finishRate !== null && record.finishRate !== undefined) {
- completionRates[recordDayIndex] = parseFloat(record.finishRate) || 0;
- }
- });
- 
- // 如果今天有实时数据（用户正在打卡），使用实时数据覆盖
- if (dayIndex < 7 && dailyTasks.value.length > 0) {
- const todayCompleted = dailyTasks.value.filter(t => t.completed).length;
- const todayTotal = dailyTasks.value.length;
- const todayRate = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
- // 只有当实时数据大于后端记录时才更新（用户刚完成更多任务）
- if (todayRate > completionRates[dayIndex]) {
- completionRates[dayIndex] = todayRate;
- }
- }
- 
- const option = {
- tooltip: {
- trigger: 'axis',
- formatter: '{b}: {c}%'
- },
- grid: {
- left: '3%',
- right: '4%',
- bottom: '3%',
- containLabel: true
- },
- xAxis: {
-    type: 'category',
-    data: days,
-    axisLine: {
-      lineStyle: { color: '#e8e4df' }
-    },
-    axisLabel: {
-      color: '#606266',
-      fontSize: 14
-    }
-  },
-  yAxis: {
-    type: 'value',
-    max: 100,
-    axisLine: { show: false },
-    axisTick: { show: false },
-    axisLabel: {
-      color: '#909399',
-      fontSize: 14,
-      formatter: '{value}%'
-    },
-    splitLine: {
-      lineStyle: { color: '#f0ece6' }
-    }
-  },
- series: [{
- name: '完成率',
- type: 'line',
- smooth: true,
- data: completionRates,
- areaStyle: {
- color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
- { offset: 0, color: 'rgba(91, 155, 213, 0.3)' },
- { offset: 1, color: 'rgba(91, 155, 213, 0.05)' }
- ])
- },
- lineStyle: {
- width: 3,
- color: '#5b9bd5'
- },
- itemStyle: {
- color: '#5b9bd5'
- },
- symbol: 'circle',
- symbolSize: 8
- }]
- };
- chartInstance.setOption(option);
-};
-const formatTodayDate = () => {
- const today = new Date();
- const month = today.getMonth() + 1;
- const day = today.getDate();
- const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
- todayDate.value = `${month}月${day}日 ${weekDays[today.getDay()]}`;
-};
-const fetchWeeklyStats = async () => {
- try {
- const res = await getWeeklyStats();
- if (res.data) {
- weeklyStatsData.completed = res.data.weekCompleted || 0;
- weeklyStatsData.total = res.data.weekTotal || 0;
- weeklyRecords.value = res.data.records || [];
- updateChart();
- }
- } catch {
- weeklyStatsData.completed = 0;
- weeklyStatsData.total = 0;
- weeklyRecords.value = [];
- }
+  if (!currentPlanId.value) return;
+  
+  // 构建已完成任务列表
+  const finishItems = dailyTasks.value
+    .filter(t => t.completed)
+    .map(t => ({
+      id: t.id,
+      type: t.type,
+      name: t.name,
+      mealType: t.mealType,
+      calorie: t.calorie,
+      duration: t.duration
+    }));
+  
+  // 构建所有任务列表
+  const totalItems = dailyTasks.value
+    .map(t => ({
+      id: t.id,
+      type: t.type,
+      name: t.name,
+      mealType: t.mealType,
+      calorie: t.calorie,
+      duration: t.duration
+    }));
+  
+  // 构建跳过任务原因映射
+  const unfinishReasons = {};
+  dailyTasks.value
+    .filter(t => t.skipped && t.skipReason)
+    .forEach(t => {
+      unfinishReasons[t.name] = t.skipReason;
+    });
+  
+  try {
+    // 调用API保存打卡记录
+    await saveClockRecord({
+      planId: currentPlanId.value,
+      finishItems,
+      totalItems,
+      unfinishReasons
+    });
+    
+    // 更新周统计数据
+    await fetchWeeklyStats();
+  } catch (error) {
+    console.error('保存打卡记录失败', error);
+  }
 };
 
+/**
+ * 初始化图表
+ */
+const initChart = () => {
+  if (!chartRef.value) return;
+  
+  // 创建ECharts实例
+  chartInstance = echarts.init(chartRef.value);
+  updateChart();
+};
+
+/**
+ * 更新图表数据
+ * 根据周打卡记录和今日实时数据更新完成率趋势图
+ */
+const updateChart = () => {
+  if (!chartInstance) return;
+  
+  const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  
+  // 初始化近7天完成率数组（默认为0）
+  const completionRates = [0, 0, 0, 0, 0, 0, 0];
+  
+  // 从后端获取的打卡记录中提取每天的完成率
+  weeklyRecords.value.forEach(record => {
+    const recordDate = new Date(record.recordDate);
+    const recordDayOfWeek = recordDate.getDay();
+    const recordDayIndex = recordDayOfWeek === 0 ? 6 : recordDayOfWeek - 1;
+    
+    // 使用后端计算的 finishRate
+    if (record.finishRate !== null && record.finishRate !== undefined) {
+      completionRates[recordDayIndex] = parseFloat(record.finishRate) || 0;
+    }
+  });
+  
+  // 如果今天有实时数据（用户正在打卡），使用实时数据覆盖
+  if (dayIndex < 7 && dailyTasks.value.length > 0) {
+    const todayCompleted = dailyTasks.value.filter(t => t.completed).length;
+    const todayTotal = dailyTasks.value.length;
+    const todayRate = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
+    
+    // 只有当实时数据大于后端记录时才更新（用户刚完成更多任务）
+    if (todayRate > completionRates[dayIndex]) {
+      completionRates[dayIndex] = todayRate;
+    }
+  }
+  
+  // ECharts配置选项
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      formatter: '{b}: {c}%'
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: days,
+      axisLine: { lineStyle: { color: '#e8e4df' } },
+      axisLabel: { color: '#606266', fontSize: 14 }
+    },
+    yAxis: {
+      type: 'value',
+      max: 100,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#909399', fontSize: 14, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: '#f0ece6' } }
+    },
+    series: [{
+      name: '完成率',
+      type: 'line',
+      smooth: true,
+      data: completionRates,
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(91, 155, 213, 0.3)' },
+          { offset: 1, color: 'rgba(91, 155, 213, 0.05)' }
+        ])
+      },
+      lineStyle: { width: 3, color: '#5b9bd5' },
+      itemStyle: { color: '#5b9bd5' },
+      symbol: 'circle',
+      symbolSize: 8
+    }]
+  };
+  
+  chartInstance.setOption(option);
+};
+
+/**
+ * 格式化今日日期显示文本
+ */
+const formatTodayDate = () => {
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const day = today.getDate();
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  todayDate.value = `${month}月${day}日 ${weekDays[today.getDay()]}`;
+};
+
+/**
+ * 获取周统计数据
+ */
+const fetchWeeklyStats = async () => {
+  try {
+    const res = await getWeeklyStats();
+    
+    if (res.data) {
+      weeklyStatsData.completed = res.data.weekCompleted || 0;
+      weeklyStatsData.total = res.data.weekTotal || 0;
+      weeklyRecords.value = res.data.records || [];
+      updateChart();
+    }
+  } catch {
+    // 失败时重置统计数据
+    weeklyStatsData.completed = 0;
+    weeklyStatsData.total = 0;
+    weeklyRecords.value = [];
+  }
+};
+
+/**
+ * 页面初始化生命周期钩子
+ * 加载所有必要数据并初始化图表
+ */
 onMounted(() => {
- formatTodayDate();
- fetchHealthRecord();
- fetchAiSummary();
- fetchDailyTasks();
- fetchWeeklyStats();
- nextTick(() => {
- initChart();
- window.addEventListener('resize', () => {
- chartInstance?.resize();
- });
- });
+  // 格式化今日日期
+  formatTodayDate();
+  
+  // 并行加载数据
+  fetchHealthRecord();  // 获取健康档案
+  fetchAiSummary();     // 获取AI计划总结
+  fetchDailyTasks();    // 获取每日任务
+  fetchWeeklyStats();   // 获取周统计数据
+  
+  // 等待DOM渲染完成后初始化图表
+  nextTick(() => {
+    initChart();
+    
+    // 添加窗口resize监听，响应式调整图表大小
+    window.addEventListener('resize', () => {
+      chartInstance?.resize();
+    });
+  });
 });
+
+/**
+ * 监听每日任务变化，自动更新图表
+ */
 watch(dailyTasks, () => {
- updateChart();
+  updateChart();
 }, { deep: true });
 </script>
 

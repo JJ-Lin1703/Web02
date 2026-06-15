@@ -73,6 +73,12 @@
 </template>
 
 <script setup>
+/**
+ * @file DocManage.vue
+ * @description 文档管理页面，支持TXT文件上传、解析、向量化入库
+ * @author SmartHealth Team
+ * @date 2024
+ */
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload, UploadFilled, Refresh, Document } from '@element-plus/icons-vue'
@@ -80,26 +86,46 @@ import { Vue3Lottie } from 'vue3-lottie'
 import { uploadPdfDoc, listDocRagDocs, getUploadStatus } from '@/api/user'
 import EmptyState from '@/components/EmptyState.vue'
 
+// 上传组件引用
 const uploadRef = ref(null)
+// 文件列表
 const fileList = ref([])
+// 选中的文件
 const selectedFile = ref(null)
+// 是否正在上传
 const uploading = ref(false)
+// 上传状态文本
 const uploadStatusText = ref('')
+// 上传进度
 const uploadProgress = ref(0)
+// 文档列表
 const docs = ref([])
+// 加载状态
 const loadingDocs = ref(false)
+// 轮询定时器
 let pollTimer = null
+// 轮询计数
 let pollCount = 0
 
-// 页面加载时自动获取文档列表
+/**
+ * 页面初始化
+ */
 onMounted(() => {
   fetchDocs()
 })
 
+/**
+ * 文件选择变更处理
+ * @param {object} file - 选中的文件对象
+ */
 const handleFileChange = (file) => {
   selectedFile.value = file.raw
 }
 
+/**
+ * 启动任务状态轮询
+ * @param {string} taskId - 任务ID
+ */
 const startPollStatus = (taskId) => {
   uploadStatusText.value = '正在向量化入库...'
   uploadProgress.value = 30
@@ -146,6 +172,9 @@ const startPollStatus = (taskId) => {
   }, 3000)
 }
 
+/**
+ * 处理文件上传
+ */
 const handleUpload = async () => {
   if (!selectedFile.value) {
     ElMessage.warning('请先选择文件')
@@ -185,6 +214,9 @@ const handleUpload = async () => {
   }
 }
 
+/**
+ * 获取文档列表
+ */
 const fetchDocs = async () => {
   loadingDocs.value = true
   try {
@@ -197,6 +229,9 @@ const fetchDocs = async () => {
   }
 }
 
+/**
+ * 页面卸载，清理资源
+ */
 onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer)
 })

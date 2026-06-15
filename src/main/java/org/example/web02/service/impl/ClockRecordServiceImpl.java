@@ -18,17 +18,40 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 打卡记录服务实现类
+ * 负责健康计划打卡记录的保存、更新、查询和统计分析
+ */
 @Service
 public class ClockRecordServiceImpl implements ClockRecordService {
 
+    /** 打卡记录数据访问层 */
     private final ClockRecordMapper clockRecordMapper;
+    /** JSON序列化工具 */
     private final ObjectMapper objectMapper;
 
+    /**
+     * 构造函数注入依赖
+     * @param clockRecordMapper 打卡记录Mapper
+     * @param objectMapper JSON序列化工具
+     */
     public ClockRecordServiceImpl(ClockRecordMapper clockRecordMapper, ObjectMapper objectMapper) {
         this.clockRecordMapper = clockRecordMapper;
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 保存或更新打卡记录
+     * 如果今日已有记录则更新，否则创建新记录
+     * 
+     * @param userId 用户ID
+     * @param planId 计划ID
+     * @param finishItems 已完成的项目列表
+     * @param totalItems 全部项目列表
+     * @param unfinishReasons 未完成原因映射（项目ID -> 原因）
+     * @return 保存/更新后的打卡记录
+     * @throws BusinessException JSON序列化失败时抛出
+     */
     @Override
     @Transactional
     public ClockRecord saveOrUpdateClockRecord(Long userId, Long planId, List<Map<String, Object>> finishItems,
@@ -80,12 +103,26 @@ public class ClockRecordServiceImpl implements ClockRecordService {
         return record;
     }
 
+    /**
+     * 获取用户今日的打卡记录
+     * 
+     * @param userId 用户ID
+     * @param planId 计划ID
+     * @return 今日打卡记录，如果不存在则返回null
+     */
     @Override
     public ClockRecord getTodayClockRecord(Long userId, Long planId) {
         Date today = Date.valueOf(LocalDate.now());
         return clockRecordMapper.findByUserPlanDate(userId, planId, today);
     }
 
+    /**
+     * 获取用户本周的打卡记录
+     * 统计从周一到周日的所有打卡记录
+     * 
+     * @param userId 用户ID
+     * @return 本周打卡记录列表
+     */
     @Override
     public List<ClockRecord> getWeekClockRecords(Long userId) {
         LocalDate today = LocalDate.now();
@@ -95,6 +132,14 @@ public class ClockRecordServiceImpl implements ClockRecordService {
         return clockRecordMapper.findByUserIdAndDateRange(userId, Date.valueOf(weekStart), Date.valueOf(weekEnd));
     }
 
+    /**
+     * 根据日期范围获取用户的打卡记录
+     * 
+     * @param userId 用户ID
+     * @param startDate 开始日期（格式：yyyy-MM-dd）
+     * @param endDate 结束日期（格式：yyyy-MM-dd）
+     * @return 指定日期范围内的打卡记录列表
+     */
     @Override
     public List<ClockRecord> getClockRecordsByDateRange(Long userId, String startDate, String endDate) {
         Date start = Date.valueOf(startDate);
@@ -102,6 +147,14 @@ public class ClockRecordServiceImpl implements ClockRecordService {
         return clockRecordMapper.findByUserIdAndDateRange(userId, start, end);
     }
 
+    /**
+     * 根据ID获取打卡记录（带权限校验）
+     * 
+     * @param userId 用户ID
+     * @param recordId 记录ID
+     * @return 打卡记录
+     * @throws BusinessException 记录不存在或无权访问时抛出
+     */
     @Override
     public ClockRecord getClockRecordById(Long userId, Long recordId) {
         ClockRecord record = clockRecordMapper.findById(recordId);
@@ -111,6 +164,13 @@ public class ClockRecordServiceImpl implements ClockRecordService {
         return record;
     }
 
+    /**
+     * 删除打卡记录
+     * 
+     * @param userId 用户ID
+     * @param recordId 记录ID
+     * @throws BusinessException 记录不存在或无权删除时抛出
+     */
     @Override
     @Transactional
     public void deleteClockRecord(Long userId, Long recordId) {
@@ -118,6 +178,17 @@ public class ClockRecordServiceImpl implements ClockRecordService {
         clockRecordMapper.deleteById(recordId);
     }
 
+    /**
+     * 获取用户本周打卡统计数据
+     * 统计本周已完成项目数、总项目数和完成率
+     * 
+     * @param userId 用户ID
+     * @return 统计结果Map，包含：
+     *         - weekCompleted: 本周已完成项目数
+     *         - weekTotal: 本周总项目数
+     *         - weekRate: 本周完成率（百分比）
+     *         - records: 本周打卡记录列表
+     */
     @Override
     public Map<String, Object> getWeeklyStats(Long userId) {
         LocalDate today = LocalDate.now();

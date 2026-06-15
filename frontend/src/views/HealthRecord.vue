@@ -192,37 +192,61 @@
 </template>
 
 <script setup>
+/**
+ * @file HealthRecord.vue
+ * @description 健康档案页面，用于填写和管理用户的健康信息
+ * @author SmartHealth Team
+ * @date 2024
+ */
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, ScaleToOriginal, Minus, TrendCharts, Warning, Document, Refresh, ArrowDown, ArrowUp, FirstAidKit, Food, Aim, InfoFilled, Check, Promotion } from '@element-plus/icons-vue'
 import { getHealthRecord, createHealthRecord, updateHealthRecord, getDictLabelOptions } from '@/api/user'
 
+/** Vue Router 路由实例，用于页面跳转 */
 const router = useRouter()
+
+/** 表单引用，用于表单验证 */
 const formRef = ref(null)
+
+/** 提交按钮加载状态 */
 const loading = ref(false)
+
+/** 是否为编辑模式（已有健康档案时为编辑模式） */
 const isEditMode = ref(false)
+
+/** 原始数据备份，用于重置表单 */
 const originalData = ref(null)
 
-// 动态下拉选项
+/** 动态下拉选项：健康目标列表 */
 const healthTargetOptions = ref([])
+
+/** 动态下拉选项：饮食偏好列表 */
 const dietHobbyOptions = ref([])
+
+/** 动态下拉选项：过敏信息列表 */
 const allergyOptions = ref([])
+
+/** 动态下拉选项：活动水平列表 */
 const activityLevelOptions = ref([])
 
+// 表单数据
 const formData = reactive({
-  age: null,
-  gender: null,
-  height: null,
-  weight: null,
-  activityLevel: null,
-  dietHobby: '',
-  healthTarget: '',
-  allergy: [],
-  medicalHistory: ''
+  age: null,              // 年龄
+  gender: null,           // 性别（0-男，1-女）
+  height: null,           // 身高(cm)
+  weight: null,           // 体重(kg)
+  activityLevel: null,    // 日常活动水平（1-低，2-中，3-高）
+  dietHobby: '',          // 饮食偏好
+  healthTarget: '',       // 健康目标
+  allergy: [],            // 过敏信息
+  medicalHistory: ''      // 病史备注
 })
 
-// 加载标签字典，填充所有下拉选项
+/**
+ * 加载标签字典，填充所有下拉选项
+ */
 const loadDictOptions = async () => {
   try {
     const res = await getDictLabelOptions()
@@ -243,6 +267,7 @@ const loadDictOptions = async () => {
   }
 }
 
+/** 健康目标选项配置 */
 const healthGoals = [
   { value: '减肥', label: '减肥', desc: '减少体重，塑造身材', icon: 'down', bgColor: 'linear-gradient(135deg, #f56c6c 0%, #f89898 100%)' },
   { value: '增肌', label: '增肌', desc: '增加肌肉，增强体质', icon: 'up', bgColor: 'linear-gradient(135deg, #67c23a 0%, #85ce61 100%)' },
@@ -276,18 +301,34 @@ const rules = {
   ]
 }
 
+/**
+ * 计算BMI（身体质量指数）
+ * @returns {number} BMI值
+ */
 const calculateBmi = () => {
+  // 身高或体重为空时返回0
   if (!formData.height || !formData.weight) return 0
+  // BMI公式：体重(kg) / 身高(m)²
   return formData.weight / Math.pow(formData.height / 100, 2)
 }
 
+/**
+ * 获取BMI分类对应的CSS类名
+ * @param {number} bmi - BMI值
+ * @returns {string} CSS类名
+ */
 const getBmiClass = (bmi) => {
-  if (bmi < 18.5) return 'bmi-underweight'
-  if (bmi < 24) return 'bmi-normal'
-  if (bmi < 28) return 'bmi-overweight'
-  return 'bmi-obese'
+  if (bmi < 18.5) return 'bmi-underweight'  // 偏瘦
+  if (bmi < 24) return 'bmi-normal'         // 正常
+  if (bmi < 28) return 'bmi-overweight'     // 偏胖
+  return 'bmi-obese'                         // 肥胖
 }
 
+/**
+ * 获取BMI对应的描述文本
+ * @param {number} bmi - BMI值
+ * @returns {string} 描述文本
+ */
 const getBmiDescription = (bmi) => {
   if (bmi < 18.5) return '偏瘦，建议增加营养摄入'
   if (bmi < 24) return '正常，继续保持'
@@ -295,12 +336,23 @@ const getBmiDescription = (bmi) => {
   return '肥胖，建议就医咨询'
 }
 
+/**
+ * 加载健康档案数据
+ * 从后端获取用户已保存的健康档案，若存在则进入编辑模式
+ */
 const loadHealthRecord = async () => {
   try {
+    // 调用API获取健康档案
     const res = await getHealthRecord()
+    
     if (res.data) {
+      // 存在健康档案，进入编辑模式
       isEditMode.value = true
+      
+      // 备份原始数据用于重置
       originalData.value = { ...res.data }
+      
+      // 填充表单数据
       formData.age = res.data.age
       formData.gender = res.data.gender
       formData.height = parseFloat(res.data.height)
@@ -308,10 +360,12 @@ const loadHealthRecord = async () => {
       formData.activityLevel = res.data.activityLevel
       formData.dietHobby = res.data.dietHobby
       formData.healthTarget = res.data.healthTarget
+      // 过敏信息由逗号分隔的字符串转换为数组
       formData.allergy = res.data.allergy ? res.data.allergy.split(',') : []
       formData.medicalHistory = res.data.medicalHistory || ''
     }
   } catch (error) {
+    // 404表示健康档案不存在，进入新建模式
     if (error.response?.data?.code === 404) {
       isEditMode.value = false
     } else {
@@ -320,10 +374,19 @@ const loadHealthRecord = async () => {
   }
 }
 
+/**
+ * 提交表单数据
+ * 验证表单后根据模式执行创建或更新操作
+ */
 const handleSubmit = async () => {
   try {
+    // 验证表单
     await formRef.value.validate()
+    
+    // 设置加载状态
     loading.value = true
+    
+    // 构造请求数据
     const requestData = {
       age: formData.age,
       gender: formData.gender,
@@ -332,28 +395,40 @@ const handleSubmit = async () => {
       activityLevel: formData.activityLevel,
       dietHobby: formData.dietHobby,
       healthTarget: formData.healthTarget,
+      // 过敏数组转换为逗号分隔的字符串
       allergy: formData.allergy.length > 0 ? formData.allergy.join(',') : null,
       medicalHistory: formData.medicalHistory || null
     }
+    
     if (isEditMode.value) {
+      // 更新健康档案
       await updateHealthRecord(requestData)
       ElMessage.success('健康档案更新成功')
     } else {
+      // 创建健康档案
       await createHealthRecord(requestData)
       ElMessage.success('健康档案创建成功')
+      // 1.5秒后跳转到首页
       setTimeout(() => {
         router.push('/')
       }, 1500)
     }
   } catch (error) {
+    // 显示错误信息
     ElMessage.error(error.response?.data?.message || '操作失败')
   } finally {
+    // 重置加载状态
     loading.value = false
   }
 }
 
+/**
+ * 重置表单数据
+ * 将表单恢复到加载时的原始状态
+ */
 const handleReset = () => {
   if (originalData.value) {
+    // 恢复所有字段到原始值
     formData.age = originalData.value.age
     formData.gender = originalData.value.gender
     formData.height = parseFloat(originalData.value.height)
@@ -366,14 +441,21 @@ const handleReset = () => {
   }
 }
 
+/**
+ * 页面初始化生命周期钩子
+ * 加载字典选项和健康档案数据
+ */
 onMounted(() => {
-  loadDictOptions()
-  loadHealthRecord()
+  loadDictOptions()      // 加载动态下拉选项
+  loadHealthRecord()     // 加载健康档案
 })
 </script>
 
 <style scoped>
-.page-container { padding: 0; min-height: 100%; }
+.page-container { 
+  padding: 0; 
+  min-height: 100%; 
+}
 .form-wrapper { max-width: 800px; margin: 0 auto; }
 .form-header { display: flex; align-items: center; gap: 20px; padding: 32px; background: linear-gradient(135deg, #409eff 0%, #67c23a 100%); border-radius: 24px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(64, 158, 255, 0.3); }
 .header-icon { width: 72px; height: 72px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }

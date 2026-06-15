@@ -30,9 +30,11 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class EmbeddingUtil {
 
+    /** 阿里百炼 Embedding API 地址（OpenAI 兼容模式） */
     private static final String EMBEDDING_API_URL =
             "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings";
 
+    /** Embedding 模型名称 */
     private static final String MODEL = "text-embedding-v4";
 
     /** 单次批量请求最大条数（阿里百炼限制：不超过10） */
@@ -47,8 +49,10 @@ public class EmbeddingUtil {
     /** 限流：相邻请求最小间隔（毫秒） */
     private static final long MIN_INTERVAL_MS = 1000 / MAX_QPS;
 
+    /** JSON序列化工具 */
     private final ObjectMapper objectMapper;
 
+    /** API Key（优先从环境变量读取） */
     private volatile String apiKey;
 
     /** 复用 HttpClient（自带连接池，默认 keep-alive 5 分钟） */
@@ -57,8 +61,9 @@ public class EmbeddingUtil {
             .executor(Executors.newFixedThreadPool(CONCURRENT_THREADS))
             .build();
 
-    /** 限流锁 */
+    /** 限流锁对象 */
     private final Object rateLimitLock = new Object();
+    /** 上次请求时间戳（毫秒） */
     private long lastRequestTime = 0;
 
     /**

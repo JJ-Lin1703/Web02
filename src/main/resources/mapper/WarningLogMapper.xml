@@ -13,6 +13,7 @@
         <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
+    <!-- 插入警告日志 -->
     <insert id="insert" parameterType="org.example.web02.entity.WarningLog">
         INSERT INTO warning_log (user_id, warning_type, warning_content, is_read, create_time, update_time, is_deleted)
         VALUES (#{userId}, #{warningType}, #{warningContent}, #{isRead}, #{createTime}, #{updateTime}, #{isDeleted})
@@ -30,6 +31,7 @@
         ORDER BY create_time DESC
     </select>
 
+    <!-- 统计用户未读警告数量 -->
     <select id="countUnreadByUserId" parameterType="Long" resultType="Long">
         SELECT COUNT(*) FROM warning_log
         WHERE user_id = #{userId} AND is_read = 0 AND is_deleted = 0
@@ -47,6 +49,7 @@
         WHERE id = #{id} AND is_deleted = 0
     </update>
 
+    <!-- 软删除警告记录 -->
     <delete id="deleteById">
         UPDATE warning_log SET is_deleted = 1 WHERE id = #{id}
     </delete>
@@ -55,12 +58,14 @@
         SELECT * FROM warning_log WHERE id = #{id} AND is_deleted = 0
     </select>
 
+    <!-- 根据用户ID和警告类型查询警告记录 -->
     <select id="findByUserIdAndType" parameterType="map" resultMap="WarningLogResultMap">
         SELECT * FROM warning_log
         WHERE user_id = #{userId} AND warning_type = #{warningType} AND is_deleted = 0
         ORDER BY create_time DESC
     </select>
 
+    <!-- 统计今日指定类型警告的数量（用于去重，避免重复发送） -->
     <select id="countTodayWarning" parameterType="map" resultType="Integer">
         SELECT COUNT(*) FROM warning_log
         WHERE user_id = #{userId} AND warning_type = #{warningType} 

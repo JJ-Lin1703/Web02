@@ -17,13 +17,26 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * 体重记录服务实现类
+ * 负责用户体重数据的记录、查询、更新和删除，以及相关健康指标的计算
+ */
 @Service
 public class WeightRecordServiceImpl implements WeightRecordService {
 
+    /** 体重记录数据访问层 */
     private final WeightRecordMapper weightRecordMapper;
+    /** 警告日志服务（用于体重波动预警） */
     private final WarningLogService warningLogService;
+    /** 用户健康档案数据访问层 */
     private final UserHealthMapper userHealthMapper;
 
+    /**
+     * 构造函数注入依赖
+     * @param weightRecordMapper 体重记录Mapper
+     * @param warningLogService 警告日志服务
+     * @param userHealthMapper 用户健康档案Mapper
+     */
     public WeightRecordServiceImpl(WeightRecordMapper weightRecordMapper, 
                                    WarningLogService warningLogService,
                                    UserHealthMapper userHealthMapper) {
@@ -32,6 +45,16 @@ public class WeightRecordServiceImpl implements WeightRecordService {
         this.userHealthMapper = userHealthMapper;
     }
 
+    /**
+     * 记录用户体重
+     * 流程：检查今日是否已记录 → 创建体重记录 → 检查体重波动预警 → 更新用户健康档案
+     * 
+     * @param userId 用户ID
+     * @param weight 体重值（单位：kg）
+     * @param remark 备注信息
+     * @return 创建的体重记录实体
+     * @throws BusinessException 今日已记录体重时抛出
+     */
     @Override
     @Transactional
     public WeightRecord recordWeight(Long userId, BigDecimal weight, String remark) {
@@ -70,6 +93,15 @@ public class WeightRecordServiceImpl implements WeightRecordService {
         return record;
     }
 
+    /**
+     * 计算健康指标（BMR、TDEE、BMI）
+     * BMR（基础代谢率）使用Mifflin-St Jeor公式计算
+     * TDEE（每日总能量消耗）= BMR × 活动系数
+     * BMI（身体质量指数）= 体重(kg) / 身高(m)²
+     * 
+     * @param userHealth 用户健康档案
+     * @return 包含BMR、TDEE、BMI的数组
+     */
     private BigDecimal[] calculateMetrics(UserHealth userHealth) {
         BigDecimal height = userHealth.getHeight();
         BigDecimal weight = userHealth.getWeight();
@@ -106,11 +138,26 @@ public class WeightRecordServiceImpl implements WeightRecordService {
         return new BigDecimal[]{bmr, tdee, bmi};
     }
 
+    /**
+     * 获取用户体重历史记录
+     * 
+     * @param userId 用户ID
+     * @return 体重记录列表（按时间倒序）
+     */
     @Override
     public List<WeightRecord> getWeightHistory(Long userId) {
         return weightRecordMapper.findByUserId(userId);
     }
 
+    /**
+     * 获取用户体重历史记录（带过滤条件）
+     * 
+     * @param userId 用户ID
+     * @param startDate 开始日期（可选）
+     * @param endDate 结束日期（可选）
+     * @param sortBy 排序方式（可选）
+     * @return 过滤后的体重记录列表
+     */
     @Override
     public List<WeightRecord> getWeightHistoryFiltered(Long userId, String startDate, String endDate, String sortBy) {
         Date start = (startDate != null && !startDate.isEmpty()) ? Date.valueOf(startDate) : null;
@@ -118,6 +165,17 @@ public class WeightRecordServiceImpl implements WeightRecordService {
         return weightRecordMapper.findByUserIdWithFilter(userId, start, end, sortBy);
     }
 
+    /**
+     * 分页获取用户体重历史记录
+     * 
+     * @param userId 用户ID
+     * @param startDate 开始日期（可选）
+     * @param endDate 结束日期（可选）
+     * @param sortBy 排序方式（可选）
+     * @param pageNum 页码（从1开始）
+     * @param pageSize 每页大小
+     * @return 分页结果
+     */
     @Override
     public PageResult<WeightRecord> getWeightHistoryPaginated(Long userId, String startDate, String endDate, String sortBy, int pageNum, int pageSize) {
         Date start = (startDate != null && !startDate.isEmpty()) ? Date.valueOf(startDate) : null;
@@ -130,6 +188,13 @@ public class WeightRecordServiceImpl implements WeightRecordService {
         return PageResult.of(records, total, pageNum, pageSize);
     }
 
+    /**
+     * 删除体重记录
+     * 
+     * @param userId 用户ID
+     * @param recordId 记录ID
+     * @throws BusinessException 记录不存在或无权删除时抛出
+     */
     @Override
     @Transactional
     public void deleteWeightRecord(Long userId, Long recordId) {
@@ -143,6 +208,15 @@ public class WeightRecordServiceImpl implements WeightRecordService {
         weightRecordMapper.deleteById(recordId);
     }
 
+    /**
+     * 更新体重记录
+     * 同时更新用户健康档案中的体重及相关健康指标
+     * 
+     * @param userId 用户ID
+     * @param recordId 记录ID
+     * @param weight 新的体重值
+     * @throws BusinessException 记录不存在或无权修改时抛出
+     */
     @Override
     @Transactional
     public void updateWeight(Long userId, Long recordId, BigDecimal weight) {
@@ -170,6 +244,13 @@ public class WeightRecordServiceImpl implements WeightRecordService {
         }
     }
 
+    /**
+     * 获取用户最近30天的体重记录
+     * 用于体重趋势图表展示
+     * 
+     * @param userId 用户ID
+     * @return 最近30天的体重记录列表
+     */
     @Override
     public List<WeightRecord> getRecent30DaysWeight(Long userId) {
         return weightRecordMapper.findRecent30DaysWeight(userId);

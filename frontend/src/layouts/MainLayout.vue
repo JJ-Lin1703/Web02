@@ -279,6 +279,12 @@
 </template>
 
 <script setup>
+/**
+ * @file MainLayout.vue
+ * @description 主布局组件，包含顶部导航栏、侧边菜单、健康档案弹窗等
+ * @author SmartHealth Team
+ * @date 2024
+ */
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -286,35 +292,46 @@ import { User, ArrowDown, Cherry, Key, Lock, House, Document, MagicStick, Refres
 import { useUserStore } from '@/stores/user'
 import { changePassword, checkHealthRecordExists, createHealthRecord, getCheckinStatus, dailyCheckin, getWarnings, getUnreadWarningCount, markAllWarningsAsRead, markWarningAsRead, deleteWarning } from '@/api/user'
 
+// 路由实例
 const router = useRouter()
+// 用户状态管理
 const userStore = useUserStore()
 
-const menuBg = computed(() => '#26B5B5')
-const menuText = computed(() => 'rgba(255,255,255,0.9)')
-const menuActiveText = computed(() => '#26B5B5')
+// 侧边菜单样式计算属性
+const menuBg = computed(() => '#26B5B5')      // 菜单背景色
+const menuText = computed(() => 'rgba(255,255,255,0.9)')  // 菜单文字颜色
+const menuActiveText = computed(() => '#26B5B5')           // 激活状态文字颜色
 
+// 签到状态
 const checkinStatus = reactive({
-  checkedInToday: false
+  checkedInToday: false  // 是否今日已签到
 })
-const checkinLoading = ref(false)
+const checkinLoading = ref(false)  // 签到加载状态
 
-const passwordDialogVisible = ref(false)
-const passwordFormRef = ref(null)
+// 修改密码弹窗
+const passwordDialogVisible = ref(false)  // 弹窗可见性
+const passwordFormRef = ref(null)         // 表单引用
 
-const showHealthRecordModal = ref(false)
-const healthRecordFormRef = ref(null)
-const healthRecordLoading = ref(false)
+// 健康档案弹窗
+const showHealthRecordModal = ref(false)  // 弹窗可见性
+const healthRecordFormRef = ref(null)     // 表单引用
+const healthRecordLoading = ref(false)    // 加载状态
 
-const apiKey = ref('')
-const showApiKeyInput = ref(false)
-const apiKeySaved = ref(false)
+// API Key 配置
+const apiKey = ref('')                    // API Key 值
+const showApiKeyInput = ref(false)        // 输入框可见性
+const apiKeySaved = ref(false)            // 是否已保存
 
-const notificationCount = ref(0)
-const showNotificationPanel = ref(false)
-const notifications = ref([])
-const notificationLoading = ref(false)
-let leaveTimer = null
+// 通知面板
+const notificationCount = ref(0)          // 未读通知数量
+const showNotificationPanel = ref(false)  // 面板可见性
+const notifications = ref([])             // 通知列表
+const notificationLoading = ref(false)    // 加载状态
+let leaveTimer = null                     // 离开定时器
 
+/**
+ * 切换API Key输入框显示/隐藏
+ */
 const toggleApiKeyInput = () => {
   showApiKeyInput.value = !showApiKeyInput.value
   if (!showApiKeyInput.value && apiKey.value) {
@@ -324,6 +341,9 @@ const toggleApiKeyInput = () => {
   }
 }
 
+/**
+ * 保存API Key到本地存储
+ */
 const saveApiKey = () => {
   if (apiKey.value) {
     localStorage.setItem('dashscope_api_key', apiKey.value)
@@ -384,6 +404,9 @@ const healthRecordRules = {
   ]
 }
 
+/**
+ * 检查并显示健康档案弹窗（如果未填写）
+ */
 const checkAndShowHealthRecordModal = async () => {
   try {
     const res = await checkHealthRecordExists()
@@ -395,10 +418,16 @@ const checkAndShowHealthRecordModal = async () => {
   }
 }
 
+/**
+ * 点击遮罩层处理
+ */
 const handleOverlayClick = () => {
   ElMessage.warning('请先完成健康档案的填写')
 }
 
+/**
+ * 提交健康档案
+ */
 const handleSubmitHealthRecord = async () => {
   try {
     await healthRecordFormRef.value.validate()
@@ -430,6 +459,12 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
+/**
+ * 验证确认密码是否与新密码一致
+ * @param {object} rule - 验证规则
+ * @param {string} value - 确认密码值
+ * @param {function} callback - 回调函数
+ */
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== passwordForm.newPassword) {
     callback(new Error('两次输入的密码不一致'))
@@ -447,6 +482,10 @@ const passwordRules = {
   ]
 }
 
+/**
+ * 处理用户命令（退出登录/修改密码）
+ * @param {string} command - 命令类型
+ */
 const handleCommand = async (command) => {
   if (command === 'logout') {
     try {
@@ -464,6 +503,9 @@ const handleCommand = async (command) => {
   }
 }
 
+/**
+ * 获取今日签到状态
+ */
 const fetchCheckinStatus = async () => {
   try {
     const res = await getCheckinStatus()
@@ -472,6 +514,9 @@ const fetchCheckinStatus = async () => {
   }
 }
 
+/**
+ * 处理每日签到
+ */
 const handleCheckin = async () => {
   if (checkinLoading.value) return
   checkinLoading.value = true
@@ -486,6 +531,9 @@ const handleCheckin = async () => {
   }
 }
 
+/**
+ * 处理修改密码
+ */
 const handleChangePassword = async () => {
   try {
     await passwordFormRef.value.validate()
@@ -503,6 +551,9 @@ const handleChangePassword = async () => {
   }
 }
 
+/**
+ * 获取未读预警数量
+ */
 const fetchNotificationCount = async () => {
   try {
     const res = await getUnreadWarningCount()
@@ -512,6 +563,9 @@ const fetchNotificationCount = async () => {
   }
 }
 
+/**
+ * 获取预警消息列表
+ */
 const fetchNotifications = async () => {
   try {
     notificationLoading.value = true
@@ -524,6 +578,9 @@ const fetchNotifications = async () => {
   }
 }
 
+/**
+ * 打开通知面板
+ */
 const openNotificationPanel = async () => {
   if (leaveTimer) {
     clearTimeout(leaveTimer)
@@ -533,6 +590,9 @@ const openNotificationPanel = async () => {
   await fetchNotifications()
 }
 
+/**
+ * 关闭通知面板（延迟）
+ */
 const closeNotificationPanel = () => {
   leaveTimer = setTimeout(() => {
     showNotificationPanel.value = false
@@ -540,6 +600,9 @@ const closeNotificationPanel = () => {
   }, 200)
 }
 
+/**
+ * 取消关闭通知面板
+ */
 const cancelCloseNotificationPanel = () => {
   if (leaveTimer) {
     clearTimeout(leaveTimer)
@@ -547,6 +610,9 @@ const cancelCloseNotificationPanel = () => {
   }
 }
 
+/**
+ * 标记所有通知为已读
+ */
 const handleMarkAllAsRead = async () => {
   try {
     await markAllWarningsAsRead()
@@ -558,6 +624,10 @@ const handleMarkAllAsRead = async () => {
   }
 }
 
+/**
+ * 标记单个通知为已读
+ * @param {number} id - 通知ID
+ */
 const handleMarkAsRead = async (id) => {
   try {
     await markWarningAsRead(id)
@@ -571,6 +641,10 @@ const handleMarkAsRead = async (id) => {
   }
 }
 
+/**
+ * 删除通知
+ * @param {number} id - 通知ID
+ */
 const handleDeleteNotification = async (id) => {
   try {
     await deleteWarning(id)
@@ -581,6 +655,11 @@ const handleDeleteNotification = async (id) => {
   }
 }
 
+/**
+ * 格式化时间显示
+ * @param {string} dateStr - 日期字符串
+ * @returns {string} 格式化后的时间
+ */
 const formatTime = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -604,6 +683,9 @@ const formatTime = (dateStr) => {
   }
 }
 
+/**
+ * 页面初始化
+ */
 onMounted(() => {
   checkAndShowHealthRecordModal()
   fetchCheckinStatus()

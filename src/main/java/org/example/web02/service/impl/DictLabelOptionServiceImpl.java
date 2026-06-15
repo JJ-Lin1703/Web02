@@ -13,8 +13,13 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+/**
+ * 标签选项服务实现类
+ * 负责健康档案标签字典的管理，包括健康目标、饮食偏好、过敏信息、慢性病史、活动水平等分类
+ */
 public class DictLabelOptionServiceImpl implements DictLabelOptionService {
 
+    /** 标签类型名称映射表 */
     private static final Map<String, String> TYPE_NAME_MAP = new LinkedHashMap<>();
     static {
         TYPE_NAME_MAP.put("health_target", "健康目标");
@@ -24,12 +29,23 @@ public class DictLabelOptionServiceImpl implements DictLabelOptionService {
         TYPE_NAME_MAP.put("activity_level", "活动水平");
     }
 
+    /** 标签选项数据访问层 */
     private final DictLabelOptionMapper dictLabelOptionMapper;
 
+    /**
+     * 构造函数注入依赖
+     * @param dictLabelOptionMapper 标签选项Mapper
+     */
     public DictLabelOptionServiceImpl(DictLabelOptionMapper dictLabelOptionMapper) {
         this.dictLabelOptionMapper = dictLabelOptionMapper;
     }
 
+    /**
+     * 根据类型获取标签名称列表
+     * 
+     * @param type 标签类型
+     * @return 标签名称列表
+     */
     @Override
     public List<String> getLabelNamesByType(String type) {
         return dictLabelOptionMapper.findByType(type).stream()
@@ -37,6 +53,11 @@ public class DictLabelOptionServiceImpl implements DictLabelOptionService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 获取所有标签选项，按类型分组
+     * 
+     * @return 分组后的标签Map（类型中文名 -> 标签名称列表）
+     */
     @Override
     public Map<String, List<String>> getAllGrouped() {
         List<DictLabelOption> all = dictLabelOptionMapper.findAllActive();
@@ -51,6 +72,11 @@ public class DictLabelOptionServiceImpl implements DictLabelOptionService {
         return result;
     }
 
+    /**
+     * 获取所有有效的标签名称集合
+     * 
+     * @return 标签名称集合
+     */
     @Override
     public Set<String> getAllValidLabelNames() {
         return dictLabelOptionMapper.findAllActive().stream()
@@ -60,11 +86,23 @@ public class DictLabelOptionServiceImpl implements DictLabelOptionService {
 
     // ====== 管理端 CRUD ======
 
+    /**
+     * 获取所有标签选项（包含禁用状态）
+     * 
+     * @return 标签选项列表
+     */
     @Override
     public List<DictLabelOption> listAll() {
         return dictLabelOptionMapper.findAll();
     }
 
+    /**
+     * 根据ID获取标签选项
+     * 
+     * @param id 标签ID
+     * @return 标签选项实体
+     * @throws BusinessException 标签不存在时抛出
+     */
     @Override
     public DictLabelOption getById(Long id) {
         DictLabelOption opt = dictLabelOptionMapper.findById(id);
@@ -74,6 +112,13 @@ public class DictLabelOptionServiceImpl implements DictLabelOptionService {
         return opt;
     }
 
+    /**
+     * 创建标签选项
+     * 
+     * @param option 标签选项实体
+     * @return 创建后的标签选项
+     * @throws BusinessException 分类为空、名称为空或分类非法时抛出
+     */
     @Override
     @Transactional
     public DictLabelOption create(DictLabelOption option) {
@@ -91,6 +136,14 @@ public class DictLabelOptionServiceImpl implements DictLabelOptionService {
         return option;
     }
 
+    /**
+     * 更新标签选项
+     * 
+     * @param id 标签ID
+     * @param option 更新内容
+     * @return 更新后的标签选项
+     * @throws BusinessException 标签不存在时抛出
+     */
     @Override
     @Transactional
     public DictLabelOption update(Long id, DictLabelOption option) {
@@ -106,6 +159,12 @@ public class DictLabelOptionServiceImpl implements DictLabelOptionService {
         return getById(id);
     }
 
+    /**
+     * 删除标签选项
+     * 
+     * @param id 标签ID
+     * @throws BusinessException 标签不存在时抛出
+     */
     @Override
     @Transactional
     public void delete(Long id) {

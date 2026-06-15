@@ -3,8 +3,14 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
+<!--
+    知识库Mapper
+    用于存储健康知识条目，支持标签检索（RAG功能）
+    表名：knowledge_base
+-->
 <mapper namespace="org.example.web02.mapper.KnowledgeBaseMapper">
 
+    <!-- 知识库结果映射 -->
     <resultMap id="KnowledgeBaseResultMap" type="org.example.web02.entity.KnowledgeBase">
         <id column="id" property="id"/>
         <result column="title" property="title"/>
@@ -27,6 +33,7 @@
         LIMIT 10
     </select>
 
+    <!-- 插入知识条目 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO knowledge_base (title, content, tags, create_time, update_time, is_deleted)
         VALUES (#{title}, #{content}, #{tags}, #{createTime}, #{updateTime}, 0)
@@ -49,6 +56,7 @@
         WHERE id = #{id} AND is_deleted = 0
     </update>
 
+    <!-- 软删除知识条目 -->
     <update id="deleteById">
         UPDATE knowledge_base SET is_deleted = 1 WHERE id = #{id}
     </update>

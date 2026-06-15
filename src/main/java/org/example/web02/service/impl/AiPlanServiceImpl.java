@@ -220,6 +220,13 @@ public class AiPlanServiceImpl implements AiPlanService {
         return newPlan;
     }
 
+    /**
+     * 从大模型响应中提取JSON格式的计划内容
+     * 通过查找第一个{和最后一个}来提取完整JSON
+     * 
+     * @param response 大模型返回的原始响应
+     * @return 提取的JSON字符串，如果无法提取则返回null
+     */
     private String extractPlanJsonFromResponse(String response) {
         if (response == null) return null;
         int startIndex = response.indexOf('{');
@@ -230,11 +237,25 @@ public class AiPlanServiceImpl implements AiPlanService {
         return null;
     }
 
+    /**
+     * 获取用户的计划历史列表
+     * 
+     * @param userId 用户ID
+     * @return 计划列表（按版本号倒序）
+     */
     @Override
     public List<AiPlan> getPlanHistory(Long userId) {
         return aiPlanMapper.findByUserId(userId);
     }
 
+    /**
+     * 分页获取用户的计划历史
+     * 
+     * @param userId 用户ID
+     * @param pageNum 页码（从1开始）
+     * @param pageSize 每页大小
+     * @return 分页结果
+     */
     @Override
     public PageResult<AiPlan> getPlanHistoryPaginated(Long userId, int pageNum, int pageSize) {
         long offset = (long) (pageNum - 1) * pageSize;
@@ -243,11 +264,24 @@ public class AiPlanServiceImpl implements AiPlanService {
         return PageResult.of(records, total, pageNum, pageSize);
     }
 
+    /**
+     * 获取用户最新的AI健康计划
+     * 
+     * @param userId 用户ID
+     * @return 最新的AI计划实体，如果不存在则返回null
+     */
     @Override
     public AiPlan getLatestPlan(Long userId) {
         return aiPlanMapper.findLatestByUserId(userId);
     }
 
+    /**
+     * 删除AI健康计划
+     * 
+     * @param userId 用户ID
+     * @param planId 计划ID
+     * @throws BusinessException 计划不存在或无权删除时抛出
+     */
     @Override
     @Transactional
     public void deletePlan(Long userId, Long planId) {
@@ -261,6 +295,16 @@ public class AiPlanServiceImpl implements AiPlanService {
         aiPlanMapper.deleteById(planId);
     }
 
+    /**
+     * 更新计划内容（直接编辑模式）
+     * 允许用户直接修改计划内容的JSON字符串
+     * 
+     * @param userId 用户ID
+     * @param planId 计划ID
+     * @param planContent 新的计划内容JSON字符串
+     * @return 更新后的计划实体
+     * @throws BusinessException 计划不存在或无权修改时抛出
+     */
     @Override
     @Transactional
     public AiPlan updatePlanContent(Long userId, Long planId, String planContent) {

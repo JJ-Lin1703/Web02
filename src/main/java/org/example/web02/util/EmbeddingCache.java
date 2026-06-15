@@ -26,7 +26,9 @@ public class EmbeddingCache {
 
     /** 文档块缓存：全量文档块列表 */
     private volatile List<DocumentChunk> documentChunksCache;
+    /** 上次文档块缓存时间戳（毫秒） */
     private volatile long lastCacheTime = 0;
+    /** 文档块缓存有效期（毫秒），默认5分钟 */
     private static final long CACHE_DURATION_MS = 5 * 60 * 1000; // 5分钟
 
     /** 检索结果缓存：问题哈希 → 检索结果 */
