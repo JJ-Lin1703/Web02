@@ -1,12 +1,19 @@
 <template>
-  <!-- 所有页面都在这里显示 → 纯静态必备 -->
+  <!-- 根组件：所有页面路由视图的容器 -->
   <router-view />
 </template>
 
 <script setup>
+/**
+ * @file App.vue
+ * @description 应用根组件，作为所有页面的容器
+ * @author SmartHealth Team
+ * @date 2024
+ */
 </script>
 
 <style>
+/* 全局样式重置 */
 * {
   margin: 0;
   padding: 0;

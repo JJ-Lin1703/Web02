@@ -112,33 +112,57 @@ import {
 } from '@/api/user'
 import EmptyState from '@/components/EmptyState.vue'
 
+/** 列表加载状态 */
 const loading = ref(false)
+
+/** 表单提交状态 */
 const submitting = ref(false)
+
+/** 对话框可见性 */
 const dialogVisible = ref(false)
+
+/** 是否为编辑模式 */
 const isEdit = ref(false)
+
+/** 当前编辑的知识条目ID */
 const editId = ref(null)
+
+/** 知识条目列表 */
 const knowledgeList = ref([])
+
+/** 标签池（分组标签） */
 const tagPool = ref({})
+
+/** 表单引用 */
 const formRef = ref(null)
 
+/** 表单数据 */
 const form = reactive({
-  title: '',
-  content: '',
-  selectedTags: []
+  title: '',           // 标题
+  content: '',         // 内容
+  selectedTags: []     // 选中的标签列表
 })
 
+/** 表单验证规则 */
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
   content: [{ required: true, message: '请输入内容', trigger: 'blur' }]
 }
 
-// 解析逗号分隔的 tags 字符串为数组
+/**
+ * 解析逗号分隔的 tags 字符串为数组
+ * @param {string} tags - 逗号分隔的标签字符串
+ * @returns {string[]} 标签数组
+ */
 const parseTags = (tags) => {
   if (!tags) return []
   return tags.split(/[,，]/).map(t => t.trim()).filter(Boolean)
 }
 
-// 加载标签池
+/**
+ * 加载标签池
+ * 从后端获取可用的标签分组数据
+ */
 const fetchTagPool = async () => {
   try {
     const res = await getValidTags()
@@ -148,20 +172,26 @@ const fetchTagPool = async () => {
   }
 }
 
-// 加载列表
+/**
+ * 加载知识列表
+ * 从后端获取所有知识条目
+ */
 const fetchList = async () => {
   loading.value = true
   try {
     const res = await getKnowledgeList()
     knowledgeList.value = res.data || []
   } catch {
-    // 拦截器已处理
+    // 拦截器已处理错误
   } finally {
     loading.value = false
   }
 }
 
-// 新增
+/**
+ * 新增知识条目
+ * 重置表单并打开对话框
+ */
 const handleAdd = () => {
   isEdit.value = false
   editId.value = null
@@ -171,7 +201,10 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-// 编辑
+/**
+ * 编辑知识条目
+ * @param {object} row - 知识条目数据
+ */
 const handleEdit = (row) => {
   isEdit.value = true
   editId.value = row.id
@@ -181,27 +214,39 @@ const handleEdit = (row) => {
   dialogVisible.value = true
 }
 
-// 删除
+/**
+ * 删除知识条目
+ * @param {object} row - 知识条目数据
+ */
 const handleDelete = async (row) => {
   try {
+    // 弹出确认对话框
     await ElMessageBox.confirm(`确定删除「${row.title}」吗？`, '删除确认', {
       type: 'warning',
       confirmButtonText: '确定删除',
       cancelButtonText: '取消'
     })
+    
+    // 调用删除API
     await deleteKnowledge(row.id)
     ElMessage.success('删除成功')
+    
+    // 刷新列表
     fetchList()
   } catch {
-    // 取消或错误
+    // 用户取消或删除失败
   }
 }
 
-// 提交表单
+/**
+ * 提交表单（新增或编辑）
+ */
 const handleSubmit = async () => {
+  // 表单验证
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
+  // 验证标签选择
   if (form.selectedTags.length === 0) {
     ElMessage.warning('请至少选择一个关联标签')
     return
@@ -212,8 +257,10 @@ const handleSubmit = async () => {
     const data = {
       title: form.title,
       content: form.content,
-      tags: form.selectedTags.join(',')
+      tags: form.selectedTags.join(',')  // 将标签数组转换为逗号分隔字符串
     }
+
+    // 根据模式调用不同API
     if (isEdit.value) {
       await updateKnowledge(editId.value, data)
       ElMessage.success('修改成功')
@@ -221,6 +268,8 @@ const handleSubmit = async () => {
       await createKnowledge(data)
       ElMessage.success('新增成功')
     }
+
+    // 关闭对话框并刷新列表
     dialogVisible.value = false
     fetchList()
   } catch (err) {
@@ -230,9 +279,12 @@ const handleSubmit = async () => {
   }
 }
 
+/**
+ * 页面初始化生命周期钩子
+ */
 onMounted(() => {
-  fetchTagPool()
-  fetchList()
+  fetchTagPool()  // 加载标签池
+  fetchList()     // 加载知识列表
 })
 </script>
 

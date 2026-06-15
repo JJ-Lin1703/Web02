@@ -141,6 +141,13 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     // ==================== 管理端 CRUD ====================
 
+    /**
+     * 创建知识条目
+     * 
+     * @param kb 知识条目实体
+     * @return 创建后的知识条目
+     * @throws BusinessException 标签为空或包含非法标签时抛出
+     */
     @Override
     @Transactional
     public KnowledgeBase create(KnowledgeBase kb) {
@@ -152,6 +159,14 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         return kb;
     }
 
+    /**
+     * 更新知识条目
+     * 
+     * @param id 知识条目ID
+     * @param kb 更新内容
+     * @return 更新后的知识条目
+     * @throws BusinessException 条目不存在或标签包含非法值时抛出
+     */
     @Override
     @Transactional
     public KnowledgeBase update(Long id, KnowledgeBase kb) {
@@ -167,6 +182,12 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         return getById(id);
     }
 
+    /**
+     * 删除知识条目
+     * 
+     * @param id 知识条目ID
+     * @throws BusinessException 条目不存在时抛出
+     */
     @Override
     @Transactional
     public void delete(Long id) {
@@ -178,6 +199,13 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         log.info("知识条目删除成功: id={}", id);
     }
 
+    /**
+     * 根据ID获取知识条目
+     * 
+     * @param id 知识条目ID
+     * @return 知识条目实体
+     * @throws BusinessException 条目不存在时抛出
+     */
     @Override
     public KnowledgeBase getById(Long id) {
         KnowledgeBase kb = knowledgeBaseMapper.findById(id);
@@ -187,11 +215,21 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         return kb;
     }
 
+    /**
+     * 获取所有知识条目列表
+     * 
+     * @return 知识条目列表
+     */
     @Override
     public List<KnowledgeBase> listAll() {
         return knowledgeBaseMapper.findAll();
     }
 
+    /**
+     * 获取所有有效的标签分组
+     * 
+     * @return 标签分组Map（类型中文名 -> 标签名称列表）
+     */
     @Override
     public Map<String, List<String>> getAllValidTags() {
         return dictLabelOptionService.getAllGrouped();
@@ -199,6 +237,13 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     // ==================== 私有方法 ====================
 
+    /**
+     * 验证标签的合法性
+     * 确保所有标签都在系统定义的合法标签范围内
+     * 
+     * @param tags 标签字符串（逗号分隔）
+     * @throws BusinessException 标签为空或包含非法标签时抛出
+     */
     private void validateTags(String tags) {
         if (tags == null || tags.isBlank()) {
             throw new BusinessException("标签不能为空，请至少选择一个合法标签");
@@ -213,6 +258,14 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         }
     }
 
+    /**
+     * 如果值在有效集合中，则添加到标签集合
+     * 用于过滤无效标签
+     * 
+     * @param tags 目标标签集合
+     * @param rawValue 原始值
+     * @param validSet 有效标签集合
+     */
     private void addIfInSet(Set<String> tags, String rawValue, Set<String> validSet) {
         if (rawValue == null || rawValue.isBlank()) return;
         String v = rawValue.trim();

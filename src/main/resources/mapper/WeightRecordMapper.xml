@@ -3,8 +3,14 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
+<!--
+    体重记录Mapper
+    用于存储用户体重记录和历史数据查询
+    表名：weight_record
+-->
 <mapper namespace="org.example.web02.mapper.WeightRecordMapper">
 
+    <!-- 体重记录结果映射 -->
     <resultMap id="WeightRecordResultMap" type="org.example.web02.entity.WeightRecord">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
@@ -25,6 +31,7 @@
         SELECT * FROM weight_record WHERE user_id = #{userId} AND is_deleted = 0 ORDER BY record_date DESC
     </select>
 
+    <!-- 查询筛选后的体重历史记录（支持日期范围和排序） -->
     <select id="findByUserIdWithFilter" resultMap="WeightRecordResultMap">
         SELECT * FROM weight_record
         <where>
@@ -86,10 +93,12 @@
           AND record_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ORDER BY record_date ASC
     </select>
+    <!-- 根据ID查询体重记录 -->
     <select id="findById" resultMap="WeightRecordResultMap">
         SELECT * FROM weight_record WHERE id = #{id} AND is_deleted = 0
     </select>
 
+    <!-- 根据用户ID和日期查询体重记录 -->
     <select id="findByUserIdAndDate" resultMap="WeightRecordResultMap">
         SELECT * FROM weight_record WHERE user_id = #{userId} AND record_date = #{recordDate} AND is_deleted = 0
     </select>
@@ -102,6 +111,7 @@
         UPDATE weight_record SET weight = #{weight}, update_time = NOW() WHERE id = #{id}
     </update>
 
+    <!-- 查询最近7天的体重值（用于体重波动检测） -->
     <select id="getWeightsInLast7Days" resultType="java.math.BigDecimal">
         SELECT weight FROM weight_record
         WHERE user_id = #{userId} 

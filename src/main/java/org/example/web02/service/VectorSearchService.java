@@ -179,6 +179,8 @@ public class VectorSearchService {
 
     /**
      * 获取所有已上传文档列表
+     * 
+     * @return 文档名称列表（去重）
      */
     public List<String> listDocs() {
         return documentChunkMapper.findDistinctDocs();
@@ -186,6 +188,8 @@ public class VectorSearchService {
 
     /**
      * 删除指定文档
+     * 
+     * @param docId 文档ID
      */
     @Transactional
     public void deleteDoc(String docId) {

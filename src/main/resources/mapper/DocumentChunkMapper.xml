@@ -13,6 +13,7 @@
         <result column="create_time" property="createTime"/>
     </resultMap>
 
+    <!-- 插入文档分块 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO document_chunks (doc_id, doc_name, chunk_index, chunk_text, embedding)
         VALUES (#{docId}, #{docName}, #{chunkIndex}, #{chunkText}, #{embedding})
@@ -26,6 +27,7 @@
         </foreach>
     </insert>
 
+    <!-- 根据文档ID查询所有分块（按分块索引排序） -->
     <select id="findByDocId" resultMap="BaseResultMap">
         SELECT id, doc_id, doc_name, chunk_index, chunk_text, embedding, create_time
         FROM document_chunks
@@ -43,6 +45,7 @@
         SELECT DISTINCT doc_name FROM document_chunks ORDER BY doc_name
     </select>
 
+    <!-- 删除指定文档的所有分块 -->
     <delete id="deleteByDocId">
         DELETE FROM document_chunks WHERE doc_id = #{docId}
     </delete>

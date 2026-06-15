@@ -14,6 +14,7 @@
         <result column="create_time" property="createTime"/>
     </resultMap>
 
+    <!-- 插入签到记录 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO daily_checkin (user_id, checkin_date, checkin_time, continuous_days, create_time)
         VALUES (#{userId}, #{checkinDate}, #{checkinTime}, #{continuousDays}, #{createTime})
@@ -27,6 +28,7 @@
         SELECT COUNT(*) FROM daily_checkin WHERE user_id = #{userId}
     </select>
 
+    <!-- 统计日期范围内的签到天数 -->
     <select id="countByUserIdAndDateRange" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM daily_checkin 
         WHERE user_id = #{userId} AND checkin_date BETWEEN #{startDate} AND #{endDate}
@@ -40,6 +42,7 @@
         SELECT * FROM daily_checkin WHERE user_id = #{userId} ORDER BY checkin_date DESC LIMIT #{offset}, #{limit}
     </select>
 
+    <!-- 计算当前连续签到天数（最多计算365天内的连续记录） -->
     <select id="getContinuousDays" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM (
             SELECT * FROM daily_checkin 

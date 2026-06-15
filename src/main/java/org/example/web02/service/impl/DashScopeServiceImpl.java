@@ -179,6 +179,11 @@ public class DashScopeServiceImpl implements DashScopeService {
         return System.getenv("DASHSCOPE_API_KEY");
     }
 
+    /**
+     * 生成个性化健康计划（无API Key版本）
+     * @param userId 用户ID
+     * @return 包含计划标题、总热量、计划内容等的Map
+     */
     @Override
     public Map<String, Object> generateHealthPlan(Long userId) {
         return generateHealthPlan(userId, null);
@@ -343,6 +348,13 @@ public class DashScopeServiceImpl implements DashScopeService {
         return result;
     }
 
+    /**
+     * 获取活动水平描述
+     * 将数字编码转换为中文描述
+     * 
+     * @param level 活动水平编码（1-低、2-中、3-高）
+     * @return 活动水平中文描述
+     */
     private String getActivityLevelDesc(int level) {
         return switch (level) {
             case 1 -> "低（久坐少动）";
@@ -352,6 +364,14 @@ public class DashScopeServiceImpl implements DashScopeService {
         };
     }
 
+    /**
+     * 安全地将对象转换为整数
+     * 支持Number、String类型的转换，失败时返回默认值
+     * 
+     * @param value 待转换的值
+     * @param defaultValue 默认值
+     * @return 转换后的整数
+     */
     private Integer safeToInteger(Object value, Integer defaultValue) {
         if (value == null) {
             return defaultValue;
@@ -372,6 +392,13 @@ public class DashScopeServiceImpl implements DashScopeService {
         return defaultValue;
     }
 
+    /**
+     * 从大模型响应中提取JSON字符串
+     * 通过查找第一个{和最后一个}来提取完整JSON
+     * 
+     * @param response 大模型返回的原始响应
+     * @return 提取的JSON字符串，如果无法提取则返回null
+     */
     private String extractJsonFromResponse(String response) {
         if (response == null) return null;
         
@@ -384,6 +411,13 @@ public class DashScopeServiceImpl implements DashScopeService {
         return null;
     }
 
+    /**
+     * 生成本地默认健康计划（降级策略）
+     * 当AI服务不可用时，使用此方法生成一个基础的一周健康计划
+     * 
+     * @param health 用户健康档案
+     * @return 默认健康计划Map（包含summary和weeklyPlan）
+     */
     private Map<String, Object> generateFallbackPlan(UserHealth health) {
         Map<String, Object> plan = new HashMap<>();
         
@@ -452,6 +486,14 @@ public class DashScopeServiceImpl implements DashScopeService {
         return plan;
     }
 
+    /**
+     * 创建餐食对象
+     * 
+     * @param type 餐食类型（早餐、午餐、晚餐、加餐）
+     * @param name 食物名称
+     * @param calorie 热量（如 "350kcal"）
+     * @return 餐食Map对象
+     */
     private Map<String, String> createMeal(String type, String name, String calorie) {
         Map<String, String> meal = new HashMap<>();
         meal.put("type", type);
@@ -460,6 +502,13 @@ public class DashScopeServiceImpl implements DashScopeService {
         return meal;
     }
 
+    /**
+     * 创建运动对象
+     * 
+     * @param name 运动名称
+     * @param duration 运动时长（如 "30分钟"）
+     * @return 运动Map对象
+     */
     private Map<String, String> createExercise(String name, String duration) {
         Map<String, String> exercise = new HashMap<>();
         exercise.put("name", name);

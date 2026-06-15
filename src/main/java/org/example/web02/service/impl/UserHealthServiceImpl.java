@@ -17,13 +17,26 @@ import java.math.RoundingMode;
 import java.sql.Date;
 //import java.util.Calendar;
 
+/**
+ * 用户健康档案服务实现类
+ * 负责用户健康档案的创建、更新、查询，以及健康指标（BMR、TDEE、BMI）的计算
+ */
 @Service
 public class UserHealthServiceImpl implements UserHealthService {
 
+    /** 用户健康档案数据访问层 */
     private final UserHealthMapper userHealthMapper;
+    /** 警告日志服务（用于BMI异常预警） */
     private final WarningLogService warningLogService;
+    /** 体重记录数据访问层 */
     private final WeightRecordMapper weightRecordMapper;
 
+    /**
+     * 构造函数注入依赖
+     * @param userHealthMapper 用户健康档案Mapper
+     * @param warningLogService 警告日志服务
+     * @param weightRecordMapper 体重记录Mapper
+     */
     public UserHealthServiceImpl(UserHealthMapper userHealthMapper,
                                   WarningLogService warningLogService,
                                   WeightRecordMapper weightRecordMapper) {
@@ -32,6 +45,15 @@ public class UserHealthServiceImpl implements UserHealthService {
         this.weightRecordMapper = weightRecordMapper;
     }
 
+    /**
+     * 创建用户健康档案
+     * 流程：参数校验 → 检查是否已存在 → 计算健康指标 → 保存 → 检查BMI预警 → 同步体重记录
+     * 
+     * @param userId 用户ID
+     * @param request 健康档案请求DTO
+     * @return 创建的健康档案响应
+     * @throws BusinessException 参数校验失败或档案已存在时抛出
+     */
     @Override
     @Transactional
     public HealthRecordResponse createHealthRecord(Long userId, HealthRecordRequest request) {
@@ -72,6 +94,15 @@ public class UserHealthServiceImpl implements UserHealthService {
         return buildResponse(userHealth);
     }
 
+    /**
+     * 更新用户健康档案
+     * 流程：参数校验 → 检查档案是否存在 → 更新数据 → 计算健康指标 → 检查BMI预警 → 同步体重记录
+     * 
+     * @param userId 用户ID
+     * @param request 健康档案请求DTO
+     * @return 更新后的健康档案响应
+     * @throws BusinessException 参数校验失败或档案不存在时抛出
+     */
     @Override
     @Transactional
     public HealthRecordResponse updateHealthRecord(Long userId, HealthRecordRequest request) {
@@ -116,6 +147,10 @@ public class UserHealthServiceImpl implements UserHealthService {
 
     /**
      * 同步体重记录：如果当天已有记录则更新，否则创建新记录
+     * 
+     * @param userId 用户ID
+     * @param weight 体重值
+     * @param remark 备注信息
      */
     private void syncWeightRecord(Long userId, BigDecimal weight, String remark) {
         Date today = Date.valueOf(java.time.LocalDate.now());
@@ -140,6 +175,13 @@ public class UserHealthServiceImpl implements UserHealthService {
         }
     }
 
+    /**
+     * 获取用户健康档案
+     * 
+     * @param userId 用户ID
+     * @return 健康档案响应
+     * @throws BusinessException 健康档案不存在时抛出
+     */
     @Override
     public HealthRecordResponse getHealthRecord(Long userId) {
         UserHealth userHealth = userHealthMapper.findByUserId(userId);
@@ -149,11 +191,30 @@ public class UserHealthServiceImpl implements UserHealthService {
         return buildResponse(userHealth);
     }
 
+    /**
+     * 检查用户是否已有健康档案
+     * 
+     * @param userId 用户ID
+     * @return true表示已存在，false表示不存在
+     */
     @Override
     public boolean hasHealthRecord(Long userId) {
         return userHealthMapper.existsByUserId(userId) > 0;
     }
 
+    /**
+     * 校验健康档案请求参数
+     * 校验规则：
+     * - 年龄：12-80岁
+     * - 性别：0（男）或1（女）
+     * - 身高：100-250cm
+     * - 体重：30-300kg
+     * - 活动水平：1（低）、2（中）、3（高）
+     * - 饮食偏好和健康目标不能为空
+     * 
+     * @param request 健康档案请求DTO
+     * @throws BusinessException 参数校验失败时抛出
+     */
     private void validateRequest(HealthRecordRequest request) {
         if (request.getAge() == null || request.getAge() < 12 || request.getAge() > 80) {
             throw new BusinessException("年龄必须在12-80岁之间");
@@ -186,6 +247,15 @@ public class UserHealthServiceImpl implements UserHealthService {
         }
     }
 
+    /**
+     * 计算健康指标（BMR、TDEE、BMI）
+     * BMR（基础代谢率）使用Mifflin-St Jeor公式计算
+     * TDEE（每日总能量消耗）= BMR × 活动系数
+     * BMI（身体质量指数）= 体重(kg) / 身高(m)²
+     * 
+     * @param userHealth 用户健康档案
+     * @return 包含BMR、TDEE、BMI的数组
+     */
     private BigDecimal[] calculateMetrics(UserHealth userHealth) {
         BigDecimal height = userHealth.getHeight();
         BigDecimal weight = userHealth.getWeight();
@@ -222,6 +292,12 @@ public class UserHealthServiceImpl implements UserHealthService {
         return new BigDecimal[]{bmr, tdee, bmi};
     }
 
+    /**
+     * 构建健康档案响应对象
+     * 
+     * @param userHealth 用户健康档案实体
+     * @return 健康档案响应DTO
+     */
     private HealthRecordResponse buildResponse(UserHealth userHealth) {
         return HealthRecordResponse.builder()
                 .id(userHealth.getId())

@@ -15,18 +15,37 @@ import java.math.RoundingMode;
 import java.sql.Date;
 import java.util.List;
 
+/**
+ * 警告日志服务实现类
+ * 负责健康预警的创建、查询和管理，包括体重波动预警、BMI异常预警、打卡提醒等
+ */
 @Service
 public class WarningLogServiceImpl implements WarningLogService {
 
+    /** 体重波动阈值（kg），超过此值触发预警 */
     private static final int WEIGHT_FLUCTUATION_THRESHOLD_KG = 3;
+    /** 连续未打卡天数阈值，超过此值触发预警 */
     private static final int CLOCK_MISS_DAYS = 3;
 
+    /** 警告日志数据访问层 */
     private final WarningLogMapper warningLogMapper;
+    /** 体重记录数据访问层 */
     private final WeightRecordMapper weightRecordMapper;
+    /** 打卡记录数据访问层 */
     private final ClockRecordMapper clockRecordMapper;
+    /** 用户数据访问层 */
     private final UserMapper userMapper;
+    /** 每日签到数据访问层 */
     private final DailyCheckinMapper dailyCheckinMapper;
 
+    /**
+     * 构造函数注入依赖
+     * @param warningLogMapper 警告日志Mapper
+     * @param weightRecordMapper 体重记录Mapper
+     * @param clockRecordMapper 打卡记录Mapper
+     * @param userMapper 用户Mapper
+     * @param dailyCheckinMapper 每日签到Mapper
+     */
     public WarningLogServiceImpl(WarningLogMapper warningLogMapper,
                                  WeightRecordMapper weightRecordMapper,
                                  ClockRecordMapper clockRecordMapper,
@@ -39,6 +58,13 @@ public class WarningLogServiceImpl implements WarningLogService {
         this.dailyCheckinMapper = dailyCheckinMapper;
     }
 
+    /**
+     * 创建警告日志
+     * 
+     * @param userId 用户ID
+     * @param warningType 警告类型（见WarningLog.TYPE_*常量）
+     * @param content 警告内容
+     */
     @Override
     @Transactional
     public void createWarning(Long userId, String warningType, String content) {
@@ -53,6 +79,13 @@ public class WarningLogServiceImpl implements WarningLogService {
         warningLogMapper.insert(warningLog);
     }
 
+    /**
+     * 获取用户所有警告日志
+     * 同时检查今日是否已签到和记录体重，未完成则创建提醒
+     * 
+     * @param userId 用户ID
+     * @return 警告日志列表
+     */
     @Override
     @Transactional
     public List<WarningLog> getWarnings(Long userId) {
@@ -77,34 +110,68 @@ public class WarningLogServiceImpl implements WarningLogService {
         return warningLogMapper.findByUserId(userId);
     }
 
+    /**
+     * 获取用户未读警告日志
+     * 
+     * @param userId 用户ID
+     * @return 未读警告日志列表
+     */
     @Override
     public List<WarningLog> getUnreadWarnings(Long userId) {
         return warningLogMapper.findUnreadByUserId(userId);
     }
 
+    /**
+     * 统计用户未读警告数量
+     * 
+     * @param userId 用户ID
+     * @return 未读警告数量
+     */
     @Override
     public long countUnreadWarnings(Long userId) {
         return warningLogMapper.countUnreadByUserId(userId);
     }
 
+    /**
+     * 标记用户所有警告为已读
+     * 
+     * @param userId 用户ID
+     */
     @Override
     @Transactional
     public void markAllAsRead(Long userId) {
         warningLogMapper.updateReadStatus(userId, 1);
     }
 
+    /**
+     * 标记单条警告为已读
+     * 
+     * @param id 警告日志ID
+     */
     @Override
     @Transactional
     public void markAsRead(Long id) {
         warningLogMapper.updateReadStatusById(id, 1);
     }
 
+    /**
+     * 删除警告日志
+     * 
+     * @param id 警告日志ID
+     */
     @Override
     @Transactional
     public void deleteWarning(Long id) {
         warningLogMapper.deleteById(id);
     }
 
+    /**
+     * 检查体重波动预警
+     * 对比最近7天内的体重变化，波动超过阈值时创建预警
+     * 
+     * @param userId 用户ID
+     * @param newWeight 新记录的体重值
+     */
     @Override
     @Transactional
     public void checkWeightFluctuation(Long userId, double newWeight) {
@@ -137,6 +204,13 @@ public class WarningLogServiceImpl implements WarningLogService {
         }
     }
 
+    /**
+     * 检查BMI异常预警
+     * BMI >= 24 为超重，BMI >= 28 为肥胖
+     * 
+     * @param userId 用户ID
+     * @param bmi BMI值
+     */
     @Override
     @Transactional
     public void checkBmiAbnormal(Long userId, double bmi) {
@@ -160,6 +234,10 @@ public class WarningLogServiceImpl implements WarningLogService {
         }
     }
 
+    /**
+     * 检查用户连续未打卡情况
+     * 遍历所有活跃用户，检查是否连续多日未完成计划打卡
+     */
     @Override
     @Transactional
     public void checkClockMiss() {
@@ -196,6 +274,12 @@ public class WarningLogServiceImpl implements WarningLogService {
         }
     }
 
+    /**
+     * 检查签到提醒
+     * 如果今日未签到，创建签到提醒警告
+     * 
+     * @param userId 用户ID
+     */
     @Override
     @Transactional
     public void checkCheckinRemind(Long userId) {
@@ -205,6 +289,12 @@ public class WarningLogServiceImpl implements WarningLogService {
         }
     }
 
+    /**
+     * 检查体重记录提醒
+     * 如果今日未记录体重，创建体重记录提醒警告
+     * 
+     * @param userId 用户ID
+     */
     @Override
     @Transactional
     public void checkWeightRecordRemind(Long userId) {

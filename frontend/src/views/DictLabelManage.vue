@@ -86,6 +86,12 @@
 </template>
 
 <script setup>
+/**
+ * @file DictLabelManage.vue
+ * @description 标签字典管理页面，用于管理健康档案中的各类标签（健康目标、饮食偏好等）
+ * @author SmartHealth Team
+ * @date 2024
+ */
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
@@ -97,6 +103,7 @@ import {
 } from '@/api/user'
 import EmptyState from '@/components/EmptyState.vue'
 
+// 分类名称映射
 const typeNameMap = {
   health_target: '健康目标',
   diet_hobby: '饮食偏好',
@@ -105,30 +112,44 @@ const typeNameMap = {
   activity_level: '活动水平'
 }
 
+// 加载状态
 const loading = ref(false)
+// 提交状态
 const submitting = ref(false)
+// 对话框可见性
 const dialogVisible = ref(false)
+// 是否为编辑模式
 const isEdit = ref(false)
+// 编辑项ID
 const editId = ref(null)
+// 标签列表
 const dictList = ref([])
+// 选中的分类
 const selectedType = ref('')
+// 筛选后的列表
 const filteredList = computed(() => {
   if (!selectedType.value) return dictList.value
   return dictList.value.filter(item => item.type === selectedType.value)
 })
+// 表单引用
 const formRef = ref(null)
 
+// 表单数据
 const form = reactive({
-  type: '',
-  labelName: '',
-  sort: 0
+  type: '',           // 分类
+  labelName: '',      // 标签名
+  sort: 0             // 排序
 })
 
+// 表单验证规则
 const rules = {
   type: [{ required: true, message: '请选择分类', trigger: 'change' }],
   labelName: [{ required: true, message: '请输入标签名', trigger: 'blur' }]
 }
 
+/**
+ * 获取标签列表
+ */
 const fetchList = async () => {
   loading.value = true
   try {
@@ -139,6 +160,9 @@ const fetchList = async () => {
   }
 }
 
+/**
+ * 打开新增对话框
+ */
 const handleAdd = () => {
   isEdit.value = false
   editId.value = null
@@ -148,6 +172,10 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
+/**
+ * 打开编辑对话框
+ * @param {object} row - 表格行数据
+ */
 const handleEdit = (row) => {
   isEdit.value = true
   editId.value = row.id
@@ -157,6 +185,10 @@ const handleEdit = (row) => {
   dialogVisible.value = true
 }
 
+/**
+ * 删除标签
+ * @param {object} row - 表格行数据
+ */
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm(`确定删除标签「${row.labelName}」吗？`, '删除确认', {
@@ -170,6 +202,9 @@ const handleDelete = async (row) => {
   } catch { /* 取消 */ }
 }
 
+/**
+ * 提交表单（新增或编辑）
+ */
 const handleSubmit = async () => {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
@@ -195,6 +230,9 @@ const handleSubmit = async () => {
   }
 }
 
+/**
+ * 页面初始化
+ */
 onMounted(() => {
   fetchList()
 })

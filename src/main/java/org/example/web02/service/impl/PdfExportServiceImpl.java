@@ -28,15 +28,28 @@ import java.util.Map;
 
 @Service
 @Slf4j
+/**
+ * PDF导出服务实现类
+ * 负责将AI健康计划导出为PDF文档，支持中文显示和精美排版
+ */
 public class PdfExportServiceImpl implements PdfExportService {
 
+    /** 用户数据访问层 */
     private final UserMapper userMapper;
+    /** 用户健康档案数据访问层 */
     private final UserHealthMapper userHealthMapper;
+    /** JSON序列化工具 */
     private final ObjectMapper objectMapper;
 
-    // 中文字体
+    /** 中文字体基础对象 */
     private BaseFont chineseBaseFont;
 
+    /**
+     * 构造函数注入依赖
+     * @param userMapper 用户Mapper
+     * @param userHealthMapper 用户健康档案Mapper
+     * @param objectMapper JSON序列化工具
+     */
     public PdfExportServiceImpl(UserMapper userMapper, UserHealthMapper userHealthMapper, ObjectMapper objectMapper) {
         this.userMapper = userMapper;
         this.userHealthMapper = userHealthMapper;
@@ -44,6 +57,11 @@ public class PdfExportServiceImpl implements PdfExportService {
         initChineseFont();
     }
 
+    /**
+     * 初始化中文字体支持
+     * 依次尝试从系统字体路径加载，失败则回退到classpath字体
+     * 支持的字体路径：Windows黑体、宋体、微软雅黑；macOS苹方；Linux文泉驿微黑
+     */
     private void initChineseFont() {
         try {
             // 尝试从系统字体加载中文字体
@@ -85,6 +103,14 @@ public class PdfExportServiceImpl implements PdfExportService {
         }
     }
 
+    /**
+     * 获取中文字体对象
+     * 如果中文字体未加载成功，则返回默认Helvetica字体
+     * 
+     * @param size 字体大小
+     * @param style 字体样式（Font.BOLD, Font.NORMAL等）
+     * @return Font对象
+     */
     private Font getChineseFont(float size, int style) {
         if (chineseBaseFont != null) {
             return new Font(chineseBaseFont, size, style);
@@ -92,6 +118,15 @@ public class PdfExportServiceImpl implements PdfExportService {
         return new Font(Font.HELVETICA, size, style);
     }
 
+    /**
+     * 导出健康计划为PDF
+     * 生成包含用户信息、计划概要和一周详细计划的PDF文档
+     * 
+     * @param userId 用户ID
+     * @param plan AI健康计划实体
+     * @return PDF文件的字节数组
+     * @throws RuntimeException 生成PDF失败时抛出
+     */
     @Override
     public byte[] exportHealthPlanToPdf(Long userId, AiPlan plan) {
         User user = userMapper.findById(userId);
@@ -123,6 +158,22 @@ public class PdfExportServiceImpl implements PdfExportService {
         }
     }
 
+    /**
+     * 添加标题页内容
+     * 包含标题、用户信息表格和计划概要
+     * 
+     * @param document PDF文档对象
+     * @param titleFont 标题字体
+     * @param headerFont 头部字体
+     * @param subHeaderFont 子头部字体
+     * @param normalFont 普通字体
+     * @param smallFont 小号字体
+     * @param boldFont 粗体字体
+     * @param user 用户实体
+     * @param health 用户健康档案
+     * @param plan AI健康计划
+     * @throws DocumentException PDF文档操作异常
+     */
     private void addTitlePage(Document document, Font titleFont, Font headerFont, Font subHeaderFont,
                               Font normalFont, Font smallFont, Font boldFont,
                               User user, UserHealth health, AiPlan plan) throws DocumentException {
@@ -200,12 +251,29 @@ public class PdfExportServiceImpl implements PdfExportService {
         document.newPage();
     }
 
+    /**
+     * 添加空行
+     * 
+     * @param document PDF文档对象
+     * @param number 空行数量
+     * @throws DocumentException PDF文档操作异常
+     */
     private void addEmptyLine(Document document, int number) throws DocumentException {
         for (int i = 0; i < number; i++) {
             document.add(new Paragraph(" ", new Font(Font.HELVETICA, 12)));
         }
     }
 
+    /**
+     * 添加信息表格行
+     * 
+     * @param table PDF表格对象
+     * @param label 标签文本
+     * @param value 值文本
+     * @param labelFont 标签字体
+     * @param valueFont 值字体
+     * @param bgColor 背景颜色
+     */
     private void addInfoRow(PdfPTable table, String label, String value, Font labelFont, Font valueFont, Color bgColor) {
         PdfPCell labelCell = new PdfPCell(new Paragraph(label, labelFont));
         labelCell.setBackgroundColor(bgColor);
@@ -221,6 +289,17 @@ public class PdfExportServiceImpl implements PdfExportService {
         table.addCell(valueCell);
     }
 
+    /**
+     * 添加概要区块（饮食建议、运动建议、健康提示）
+     * 
+     * @param document PDF文档对象
+     * @param title 区块标题
+     * @param items 项目列表
+     * @param titleFont 标题字体
+     * @param contentFont 内容字体
+     * @param accentColor 强调色
+     * @throws DocumentException PDF文档操作异常
+     */
     private void addSummaryBlock(Document document, String title, List<String> items, Font titleFont, Font contentFont, Color accentColor) throws DocumentException {
         // 标题行
         PdfPTable titleTable = new PdfPTable(1);
@@ -263,6 +342,19 @@ public class PdfExportServiceImpl implements PdfExportService {
         document.add(contentTable);
     }
 
+    /**
+     * 添加一周详细计划
+     * 逐天渲染饮食和运动安排，每两天换一页
+     * 
+     * @param document PDF文档对象
+     * @param headerFont 头部字体
+     * @param subHeaderFont 子头部字体
+     * @param normalFont 普通字体
+     * @param smallFont 小号字体
+     * @param boldFont 粗体字体
+     * @param plan AI健康计划
+     * @throws DocumentException PDF文档操作异常
+     */
     private void addWeeklyPlan(Document document, Font headerFont, Font subHeaderFont, Font normalFont, Font smallFont, Font boldFont,
                                AiPlan plan) throws DocumentException {
         try {
@@ -323,6 +415,17 @@ public class PdfExportServiceImpl implements PdfExportService {
         }
     }
 
+    /**
+     * 添加餐食安排区块
+     * 显示早餐、午餐、晚餐及加餐的详细内容和热量信息
+     * 
+     * @param dayTable 日期表格对象
+     * @param dayPlan 单日计划数据
+     * @param titleFont 标题字体
+     * @param normalFont 普通字体
+     * @param smallFont 小号字体
+     * @param boldFont 粗体字体
+     */
     private void addMealSection(PdfPTable dayTable, Map<String, Object> dayPlan, Font titleFont, Font normalFont, Font smallFont, Font boldFont) {
         PdfPCell mealCell = new PdfPCell();
         mealCell.setPadding(10);
@@ -375,6 +478,17 @@ public class PdfExportServiceImpl implements PdfExportService {
         dayTable.addCell(mealCell);
     }
 
+    /**
+     * 添加运动安排区块
+     * 显示运动名称和时长信息
+     * 
+     * @param dayTable 日期表格对象
+     * @param dayPlan 单日计划数据
+     * @param titleFont 标题字体
+     * @param normalFont 普通字体
+     * @param smallFont 小号字体
+     * @param boldFont 粗体字体
+     */
     private void addExerciseSection(PdfPTable dayTable, Map<String, Object> dayPlan, Font titleFont, Font normalFont, Font smallFont, Font boldFont) {
         PdfPCell exerciseCell = new PdfPCell();
         exerciseCell.setPadding(10);

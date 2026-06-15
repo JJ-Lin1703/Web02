@@ -23,10 +23,12 @@
         VALUES (#{userId}, #{planTitle}, #{totalCalorie}, #{planContent}, #{versionNo}, #{parentPlanId}, #{generateTime}, #{updateTime}, 0)
     </insert>
 
+    <!-- 根据用户ID查询所有计划（按生成时间倒序） -->
     <select id="findByUserId" resultMap="AiPlanResultMap">
         SELECT * FROM ai_plan WHERE user_id = #{userId} AND is_deleted = 0 ORDER BY generate_time DESC
     </select>
 
+    <!-- 分页查询用户计划 -->
     <select id="findByUserIdPaginated" resultMap="AiPlanResultMap">
         SELECT * FROM ai_plan WHERE user_id = #{userId} AND is_deleted = 0 ORDER BY generate_time DESC LIMIT #{offset}, #{limit}
     </select>
@@ -43,6 +45,7 @@
         UPDATE ai_plan SET is_deleted = 1 WHERE id = #{id}
     </update>
 
+    <!-- 更新计划内容 -->
     <update id="updateById">
         UPDATE ai_plan 
         SET plan_title = #{planTitle}, 

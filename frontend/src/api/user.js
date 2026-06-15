@@ -2,6 +2,13 @@ import request from '@/utils/request'
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
 
+/**
+ * 用户登录
+ * @param {object} data - 登录信息
+ * @param {string} data.username - 用户名
+ * @param {string} data.password - 密码
+ * @returns {Promise} 登录结果
+ */
 export const userLogin = (data) => {
   return request({
     url: '/auth/login',
@@ -10,6 +17,14 @@ export const userLogin = (data) => {
   })
 }
 
+/**
+ * 用户注册
+ * @param {object} data - 注册信息
+ * @param {string} data.username - 用户名
+ * @param {string} data.password - 密码
+ * @param {string} data.email - 邮箱
+ * @returns {Promise} 注册结果
+ */
 export const userRegister = (data) => {
   return request({
     url: '/auth/register',
@@ -18,6 +33,10 @@ export const userRegister = (data) => {
   })
 }
 
+/**
+ * 获取当前用户信息
+ * @returns {Promise} 用户信息
+ */
 export const getUserInfo = () => {
   return request({
     url: '/auth/me',
@@ -25,6 +44,13 @@ export const getUserInfo = () => {
   })
 }
 
+/**
+ * 修改密码
+ * @param {object} data - 密码信息
+ * @param {string} data.oldPassword - 旧密码
+ * @param {string} data.newPassword - 新密码
+ * @returns {Promise} 修改结果
+ */
 export const changePassword = (data) => {
   return request({
     url: '/auth/change-password',
@@ -33,6 +59,10 @@ export const changePassword = (data) => {
   })
 }
 
+/**
+ * 获取所有用户列表（管理员）
+ * @returns {Promise} 用户列表
+ */
 export const getAllUsers = () => {
   return request({
     url: '/admin/users',
@@ -40,6 +70,12 @@ export const getAllUsers = () => {
   })
 }
 
+/**
+ * 重置用户密码（管理员）
+ * @param {number} userId - 用户ID
+ * @param {object} data - 密码信息
+ * @returns {Promise} 重置结果
+ */
 export const resetUserPassword = (userId, data) => {
   return request({
     url: `/admin/users/${userId}/reset-password`,
@@ -48,6 +84,10 @@ export const resetUserPassword = (userId, data) => {
   })
 }
 
+/**
+ * 获取今日打卡状态
+ * @returns {Promise} 打卡状态
+ */
 export const getCheckinStatus = () => {
   return request({
     url: '/checkin/status',
@@ -55,6 +95,10 @@ export const getCheckinStatus = () => {
   })
 }
 
+/**
+ * 每日打卡
+ * @returns {Promise} 打卡结果
+ */
 export const dailyCheckin = () => {
   return request({
     url: '/checkin/daily',
@@ -62,6 +106,10 @@ export const dailyCheckin = () => {
   })
 }
 
+/**
+ * 获取健康档案
+ * @returns {Promise} 健康档案数据
+ */
 export const getHealthRecord = () => {
   return request({
     url: '/health-record',
@@ -69,6 +117,11 @@ export const getHealthRecord = () => {
   })
 }
 
+/**
+ * 创建健康档案
+ * @param {object} data - 健康档案数据
+ * @returns {Promise} 创建结果
+ */
 export const createHealthRecord = (data) => {
   return request({
     url: '/health-record',
@@ -77,6 +130,11 @@ export const createHealthRecord = (data) => {
   })
 }
 
+/**
+ * 更新健康档案
+ * @param {object} data - 健康档案数据
+ * @returns {Promise} 更新结果
+ */
 export const updateHealthRecord = (data) => {
   return request({
     url: '/health-record',
@@ -85,6 +143,10 @@ export const updateHealthRecord = (data) => {
   })
 }
 
+/**
+ * 检查健康档案是否存在
+ * @returns {Promise} 是否存在
+ */
 export const checkHealthRecordExists = () => {
   return request({
     url: '/health-record/exists',
@@ -92,6 +154,11 @@ export const checkHealthRecordExists = () => {
   })
 }
 
+/**
+ * 获取打卡历史记录
+ * @param {object} params - 查询参数
+ * @returns {Promise} 打卡历史列表
+ */
 export const getCheckinHistory = (params = {}) => {
   return request({
     url: '/checkin/history',
@@ -100,6 +167,11 @@ export const getCheckinHistory = (params = {}) => {
   })
 }
 
+/**
+ * 获取体重历史记录
+ * @param {object} params - 查询参数
+ * @returns {Promise} 体重历史列表
+ */
 export const getWeightHistory = (params = {}) => {
   return request({
     url: '/weight-record/history',
@@ -108,6 +180,13 @@ export const getWeightHistory = (params = {}) => {
   })
 }
 
+/**
+ * 记录体重
+ * @param {object} data - 体重数据
+ * @param {number} data.weight - 体重(kg)
+ * @param {string} data.remark - 备注
+ * @returns {Promise} 记录结果
+ */
 export const recordWeight = (data) => {
   return request({
     url: '/weight-record',
@@ -116,6 +195,11 @@ export const recordWeight = (data) => {
   })
 }
 
+/**
+ * 删除体重记录
+ * @param {number} id - 记录ID
+ * @returns {Promise} 删除结果
+ */
 export const deleteWeightRecord = (id) => {
   return request({
     url: `/weight-record/${id}`,
@@ -123,6 +207,12 @@ export const deleteWeightRecord = (id) => {
   })
 }
 
+/**
+ * 更新体重记录
+ * @param {number} id - 记录ID
+ * @param {object} data - 体重数据
+ * @returns {Promise} 更新结果
+ */
 export const updateWeightRecord = (id, data) => {
   return request({
     url: `/weight-record/${id}`,
@@ -131,6 +221,10 @@ export const updateWeightRecord = (id, data) => {
   })
 }
 
+/**
+ * 获取体重趋势
+ * @returns {Promise} 体重趋势数据
+ */
 export const getWeightTrend = () => {
   return request({
     url: '/weight-record/trend',
@@ -138,6 +232,10 @@ export const getWeightTrend = () => {
   })
 }
 
+/**
+ * 生成AI健康计划
+ * @returns {Promise} AI计划数据
+ */
 export const generateAiPlan = () => {
   return request({
     url: '/ai-plan/generate',
@@ -146,6 +244,11 @@ export const generateAiPlan = () => {
   })
 }
 
+/**
+ * 微调AI计划
+ * @param {object} data - 微调参数
+ * @returns {Promise} 微调后的计划
+ */
 export const tweakAiPlan = (data) => {
   return request({
     url: '/ai-plan/tweak',
@@ -155,6 +258,11 @@ export const tweakAiPlan = (data) => {
   })
 }
 
+/**
+ * 获取AI计划历史
+ * @param {object} params - 查询参数
+ * @returns {Promise} 计划历史列表
+ */
 export const getAiPlanHistory = (params = {}) => {
   return request({
     url: '/ai-plan/history',
@@ -163,6 +271,10 @@ export const getAiPlanHistory = (params = {}) => {
   })
 }
 
+/**
+ * 获取最新AI计划
+ * @returns {Promise} 最新计划数据
+ */
 export const getLatestAiPlan = () => {
   return request({
     url: '/ai-plan/latest',
@@ -170,6 +282,11 @@ export const getLatestAiPlan = () => {
   })
 }
 
+/**
+ * 删除AI计划
+ * @param {number} id - 计划ID
+ * @returns {Promise} 删除结果
+ */
 export const deleteAiPlan = (id) => {
   return request({
     url: `/ai-plan/${id}`,
@@ -177,6 +294,12 @@ export const deleteAiPlan = (id) => {
   })
 }
 
+/**
+ * 更新AI计划内容
+ * @param {number} planId - 计划ID
+ * @param {string} planContent - 计划内容(JSON)
+ * @returns {Promise} 更新结果
+ */
 export const updateAiPlanContent = (planId, planContent) => {
   return request({
     url: `/ai-plan/${planId}/content`,
@@ -185,6 +308,11 @@ export const updateAiPlanContent = (planId, planContent) => {
   })
 }
 
+/**
+ * 保存打卡记录
+ * @param {object} data - 打卡数据
+ * @returns {Promise} 保存结果
+ */
 export const saveClockRecord = (data) => {
   return request({
     url: '/clock-record/save',
@@ -193,6 +321,11 @@ export const saveClockRecord = (data) => {
   })
 }
 
+/**
+ * 获取今日打卡记录
+ * @param {number} planId - 计划ID
+ * @returns {Promise} 今日打卡记录
+ */
 export const getTodayClockRecord = (planId) => {
   return request({
     url: '/clock-record/today',
@@ -201,6 +334,10 @@ export const getTodayClockRecord = (planId) => {
   })
 }
 
+/**
+ * 获取周统计数据
+ * @returns {Promise} 周统计信息
+ */
 export const getWeeklyStats = () => {
   return request({
     url: '/clock-record/week',
@@ -208,6 +345,12 @@ export const getWeeklyStats = () => {
   })
 }
 
+/**
+ * 获取指定日期范围的打卡记录
+ * @param {string} startDate - 开始日期
+ * @param {string} endDate - 结束日期
+ * @returns {Promise} 打卡记录列表
+ */
 export const getClockRecordsByRange = (startDate, endDate) => {
   return request({
     url: '/clock-record/range',
@@ -216,6 +359,11 @@ export const getClockRecordsByRange = (startDate, endDate) => {
   })
 }
 
+/**
+ * 删除打卡记录
+ * @param {number} id - 记录ID
+ * @returns {Promise} 删除结果
+ */
 export const deleteClockRecord = (id) => {
   return request({
     url: `/clock-record/${id}`,
@@ -223,6 +371,11 @@ export const deleteClockRecord = (id) => {
   })
 }
 
+/**
+ * 导出AI计划为PDF
+ * @param {number} [planId] - 计划ID，不传则导出最新计划
+ * @returns {Promise} 导出结果
+ */
 export const exportAiPlanPdf = async (planId = null) => {
   const userStore = useUserStore()
   const url = planId ? `/api/ai-plan/export/${planId}` : '/api/ai-plan/export/latest'
@@ -274,6 +427,10 @@ export const exportAiPlanPdf = async (planId = null) => {
 
 // ======================== 知识库管理 ===========================
 
+/**
+ * 获取知识库列表
+ * @returns {Promise} 知识库列表
+ */
 export const getKnowledgeList = () => {
   return request({
     url: '/knowledge-base/list',
@@ -281,6 +438,11 @@ export const getKnowledgeList = () => {
   })
 }
 
+/**
+ * 根据ID获取知识库详情
+ * @param {number} id - 知识库ID
+ * @returns {Promise} 知识库详情
+ */
 export const getKnowledgeById = (id) => {
   return request({
     url: `/knowledge-base/${id}`,
@@ -288,6 +450,11 @@ export const getKnowledgeById = (id) => {
   })
 }
 
+/**
+ * 创建知识库条目
+ * @param {object} data - 知识库数据
+ * @returns {Promise} 创建结果
+ */
 export const createKnowledge = (data) => {
   return request({
     url: '/knowledge-base',
@@ -296,6 +463,12 @@ export const createKnowledge = (data) => {
   })
 }
 
+/**
+ * 更新知识库条目
+ * @param {number} id - 知识库ID
+ * @param {object} data - 更新数据
+ * @returns {Promise} 更新结果
+ */
 export const updateKnowledge = (id, data) => {
   return request({
     url: `/knowledge-base/${id}`,
@@ -304,6 +477,11 @@ export const updateKnowledge = (id, data) => {
   })
 }
 
+/**
+ * 删除知识库条目
+ * @param {number} id - 知识库ID
+ * @returns {Promise} 删除结果
+ */
 export const deleteKnowledge = (id) => {
   return request({
     url: `/knowledge-base/${id}`,
@@ -311,6 +489,10 @@ export const deleteKnowledge = (id) => {
   })
 }
 
+/**
+ * 获取有效的标签列表
+ * @returns {Promise} 标签列表
+ */
 export const getValidTags = () => {
   return request({
     url: '/knowledge-base/tags',
@@ -318,7 +500,10 @@ export const getValidTags = () => {
   })
 }
 
-/** 获取标签字典（分组），用于健康档案下拉框和知识库标签池 */
+/**
+ * 获取标签字典（分组），用于健康档案下拉框和知识库标签池
+ * @returns {Promise} 标签字典数据
+ */
 export const getDictLabelOptions = () => {
   return request({
     url: '/dict-label-options',
@@ -326,7 +511,10 @@ export const getDictLabelOptions = () => {
   })
 }
 
-/** 标签字典管理端列表 */
+/**
+ * 获取标签字典管理端列表
+ * @returns {Promise} 标签字典列表
+ */
 export const getDictLabelList = () => {
   return request({
     url: '/dict-label-options/list',
@@ -334,7 +522,11 @@ export const getDictLabelList = () => {
   })
 }
 
-/** 新增标签字典 */
+/**
+ * 新增标签字典
+ * @param {object} data - 标签数据
+ * @returns {Promise} 创建结果
+ */
 export const createDictLabel = (data) => {
   return request({
     url: '/dict-label-options',
@@ -343,7 +535,12 @@ export const createDictLabel = (data) => {
   })
 }
 
-/** 修改标签字典 */
+/**
+ * 修改标签字典
+ * @param {number} id - 标签ID
+ * @param {object} data - 更新数据
+ * @returns {Promise} 更新结果
+ */
 export const updateDictLabel = (id, data) => {
   return request({
     url: `/dict-label-options/${id}`,
@@ -352,7 +549,11 @@ export const updateDictLabel = (id, data) => {
   })
 }
 
-/** 删除标签字典 */
+/**
+ * 删除标签字典
+ * @param {number} id - 标签ID
+ * @returns {Promise} 删除结果
+ */
 export const deleteDictLabel = (id) => {
   return request({
     url: `/dict-label-options/${id}`,
@@ -362,6 +563,10 @@ export const deleteDictLabel = (id) => {
 
 // ======================== 健康预警 ===========================
 
+/**
+ * 获取健康预警列表
+ * @returns {Promise} 预警列表
+ */
 export const getWarnings = () => {
   return request({
     url: '/warnings',
@@ -369,9 +574,24 @@ export const getWarnings = () => {
   })
 }
 
+/**
+ * 获取未读预警数量
+ * @returns {Promise} 未读数量
+ */
+export const getUnreadWarningCount = () => {
+  return request({
+    url: '/warnings/unread/count',
+    method: 'get'
+  })
+}
+
 // ======================== 向量RAG ===========================
 
-/** 上传TXT文档（multipart文件上传） */
+/**
+ * 上传TXT文档（multipart文件上传）
+ * @param {File} file - 要上传的文件
+ * @returns {Promise} 上传结果
+ */
 export const uploadPdfDoc = (file) => {
   const formData = new FormData()
   formData.append('file', file)
@@ -385,7 +605,12 @@ export const uploadPdfDoc = (file) => {
   })
 }
 
-/** 文档问答 */
+/**
+ * 文档问答
+ * @param {string} question - 用户问题
+ * @param {string} sessionId - 会话ID
+ * @returns {Promise} 问答结果
+ */
 export const docAsk = (question, sessionId) => {
   return request({
     url: '/doc-rag/ask',
@@ -395,7 +620,10 @@ export const docAsk = (question, sessionId) => {
   })
 }
 
-/** 获取已上传文档列表 */
+/**
+ * 获取已上传文档列表
+ * @returns {Promise} 文档列表
+ */
 export const listDocRagDocs = () => {
   return request({
     url: '/doc-rag/docs',
@@ -403,7 +631,11 @@ export const listDocRagDocs = () => {
   })
 }
 
-/** 查询上传任务状态 */
+/**
+ * 查询上传任务状态
+ * @param {string} taskId - 任务ID
+ * @returns {Promise} 任务状态
+ */
 export const getUploadStatus = (taskId) => {
   return request({
     url: `/doc-rag/upload/status/${taskId}`,
@@ -411,14 +643,10 @@ export const getUploadStatus = (taskId) => {
   })
 }
 
-export const getUnreadWarningCount = () => {
-  return request({
-    url: '/warnings/unread/count',
-    method: 'get'
-  })
-}
-
-/** 获取历史会话列表 */
+/**
+ * 获取历史会话列表
+ * @returns {Promise} 会话列表
+ */
 export const listConversations = () => {
   return request({
     url: '/doc-rag/conversations',
@@ -426,6 +654,10 @@ export const listConversations = () => {
   })
 }
 
+/**
+ * 标记所有预警为已读
+ * @returns {Promise} 标记结果
+ */
 export const markAllWarningsAsRead = () => {
   return request({
     url: '/warnings/read-all',
@@ -433,6 +665,11 @@ export const markAllWarningsAsRead = () => {
   })
 }
 
+/**
+ * 标记单个预警为已读
+ * @param {number} id - 预警ID
+ * @returns {Promise} 标记结果
+ */
 export const markWarningAsRead = (id) => {
   return request({
     url: `/warnings/${id}/read`,
@@ -440,6 +677,11 @@ export const markWarningAsRead = (id) => {
   })
 }
 
+/**
+ * 删除预警
+ * @param {number} id - 预警ID
+ * @returns {Promise} 删除结果
+ */
 export const deleteWarning = (id) => {
   return request({
     url: `/warnings/${id}`,
@@ -447,7 +689,11 @@ export const deleteWarning = (id) => {
   })
 }
 
-/** 获取指定会话的消息 */
+/**
+ * 获取指定会话的消息
+ * @param {string} sessionId - 会话ID
+ * @returns {Promise} 会话消息
+ */
 export const getConversation = (sessionId) => {
   return request({
     url: `/doc-rag/conversations/${sessionId}`,

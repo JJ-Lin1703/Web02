@@ -23,7 +23,9 @@ import java.util.concurrent.Executors;
 
 /**
  * 向量 RAG 控制器
- * 提供 TXT 文档上传（异步 + DB 状态追踪 + 失败重试）+ 文档问答
+ *
+ * 提供 TXT 文档上传（异步 + DB 状态追踪 + 失败重试）和文档问答功能
+ * 支持文档向量化入库、基于文档的问答、会话管理等
  */
 @Slf4j
 @RestController
@@ -31,9 +33,16 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class DocRagController {
 
+    /** 向量搜索服务，用于文档向量化入库和检索 */
     private final VectorSearchService vectorSearchService;
+
+    /** 文档问答服务，用于基于文档的问答 */
     private final DocumentQAService documentQAService;
+
+    /** AI 会话 Mapper，用于对话记录的数据库操作 */
     private final AiConversationMapper aiConversationMapper;
+
+    /** 上传任务 Mapper，用于上传任务状态的数据库操作 */
     private final UploadTaskMapper uploadTaskMapper;
 
     /** 异步任务线程池（IO 密集型，线程数不宜过多） */
@@ -41,32 +50,43 @@ public class DocRagController {
 
     /**
      * 上传 TXT 文档（异步处理，立即返回任务ID）
+     *
+     * @param file 上传的 TXT 文件
+     * @param authentication 认证信息，用于获取当前用户 ID
+     * @return 包含任务 ID 和上传信息的响应
      */
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file,
                                         Authentication authentication) {
         try {
+            // 获取文件名
             String fileName = file.getOriginalFilename();
 
+            // 校验文件名
             if (fileName == null || fileName.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "文件名不能为空"));
             }
+            // 校验文件内容
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "文件内容不能为空"));
             }
+            // 校验文件类型（仅支持 TXT）
             if (!fileName.toLowerCase().endsWith(".txt")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "仅支持 TXT 文件"));
             }
 
+            // 读取文件内容（UTF-8 编码）
             String text = new String(file.getBytes(), StandardCharsets.UTF_8);
             if (text.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "文件内容为空，无法处理"));
             }
 
-            // 1) 创建 DB 任务记录（初始状态 PENDING）
+            // 获取用户 ID（可选认证）
             Long userId = authentication != null ? (Long) authentication.getPrincipal() : null;
+            // 生成任务 ID
             String taskId = "upload_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
 
+            // 创建 DB 任务记录（初始状态 PENDING）
             UploadTask task = UploadTask.builder()
                     .taskId(taskId)
                     .fileName(fileName)
@@ -78,7 +98,7 @@ public class DocRagController {
                     .build();
             uploadTaskMapper.insert(task);
 
-            // 2) 异步执行向量化入库
+            // 异步执行向量化入库
             CompletableFuture.runAsync(() -> {
                 processUploadTask(taskId, text, fileName);
             }, taskExecutor);
@@ -100,6 +120,10 @@ public class DocRagController {
 
     /**
      * 异步执行上传任务（含失败重试）
+     *
+     * @param taskId 任务 ID
+     * @param text 文档文本内容
+     * @param fileName 文件名
      */
     private void processUploadTask(String taskId, String text, String fileName) {
         int maxRetries = 3;
@@ -154,9 +178,13 @@ public class DocRagController {
 
     /**
      * 查询上传任务状态（从 DB 读取）
+     *
+     * @param taskId 任务 ID
+     * @return 包含任务状态的响应
      */
     @GetMapping("/upload/status/{taskId}")
     public ResponseEntity<?> getUploadStatus(@PathVariable String taskId) {
+        // 从数据库查询任务状态
         UploadTask task = uploadTaskMapper.findByTaskId(taskId);
         if (task == null) {
             return ResponseEntity.notFound().build();
@@ -172,19 +200,26 @@ public class DocRagController {
 
     /**
      * 文档问答（自动保存对话记录）
+     *
+     * @param body 请求体，包含问题和会话 ID
+     * @param authentication 认证信息，用于获取当前用户 ID
+     * @return 包含问答结果的响应
      */
     @PostMapping("/ask")
     public ResponseEntity<?> ask(@RequestBody Map<String, String> body,
                                  Authentication authentication) {
+        // 获取问题
         String question = body.get("question");
         if (question == null || question.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "问题不能为空"));
         }
 
+        // 获取用户 ID 和会话 ID
         Long userId = authentication != null ? (Long) authentication.getPrincipal() : null;
         String sessionId = body.getOrDefault("sessionId", "");
 
         try {
+            // 调用文档问答服务
             Map<String, Object> result = documentQAService.ask(question);
 
             // 保存对话记录
@@ -212,10 +247,13 @@ public class DocRagController {
 
     /**
      * 获取已上传文档列表
+     *
+     * @return 包含文档列表的响应
      */
     @GetMapping("/docs")
     public ResponseEntity<?> listDocs() {
         try {
+            // 调用向量搜索服务获取文档列表
             List<String> docs = vectorSearchService.listDocs();
             return ResponseEntity.ok(Map.of("docs", docs));
         } catch (Exception e) {
@@ -225,12 +263,18 @@ public class DocRagController {
 
     /**
      * 获取当前用户的会话列表
+     *
+     * @param authentication 认证信息，用于获取当前用户 ID
+     * @return 包含会话列表的响应
      */
     @GetMapping("/conversations")
     public ResponseEntity<?> listConversations(Authentication authentication) {
         try {
+            // 从认证信息中获取用户 ID
             Long userId = (Long) authentication.getPrincipal();
+            // 查询用户的会话列表
             List<AiConversation> sessions = aiConversationMapper.findSessionsByUserId(userId);
+            // 截断问题文本（超过 30 字符）
             sessions.forEach(s -> {
                 if (s.getQuestion() != null && s.getQuestion().length() > 30) {
                     s.setQuestion(s.getQuestion().substring(0, 30) + "...");
@@ -244,10 +288,14 @@ public class DocRagController {
 
     /**
      * 获取指定会话的消息列表
+     *
+     * @param sessionId 会话 ID
+     * @return 包含消息列表的响应
      */
     @GetMapping("/conversations/{sessionId}")
     public ResponseEntity<?> getConversation(@PathVariable String sessionId) {
         try {
+            // 查询会话的消息列表
             List<AiConversation> messages = aiConversationMapper.findBySessionId(sessionId);
             return ResponseEntity.ok(Map.of("messages", messages));
         } catch (Exception e) {

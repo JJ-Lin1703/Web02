@@ -275,61 +275,101 @@
 </template>
 
 <script setup>
+/**
+ * @file History.vue
+ * @description 历史记录页面，包含体重记录、打卡记录、AI计划历史
+ * @author SmartHealth Team
+ * @date 2024
+ */
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, View, Delete, Check, Sunny } from '@element-plus/icons-vue'
 import { getCheckinHistory, getWeightHistory, recordWeight, deleteWeightRecord, updateWeightRecord, getAiPlanHistory, deleteAiPlan } from '@/api/user'
 import EmptyState from '@/components/EmptyState.vue'
 
+/** 当前激活的标签页（weight/ai-plan/checkin） */
 const activeTab = ref('weight')
 
+/** 体重记录表单 */
 const weightForm = reactive({
-  weight: null,
-  remark: ''
+  weight: null,   // 体重值(kg)
+  remark: ''      // 备注
 })
 
+/** 体重历史记录列表 */
 const weightHistory = ref([])
+
+/** 体重记录提交加载状态 */
 const weightLoading = ref(false)
+
+/** 体重表格数据加载状态 */
 const weightTableLoading = ref(false)
+
+/** 体重记录分页配置 */
 const weightPagination = reactive({
-  pageNum: 1,
-  pageSize: 10,
-  total: 0
+  pageNum: 1,    // 当前页码
+  pageSize: 10,  // 每页大小
+  total: 0       // 总记录数
 })
 
+/** 打卡历史记录列表 */
 const checkinHistory = ref([])
+
+/** 打卡记录加载状态 */
 const checkinLoading = ref(false)
+
+/** 打卡记录分页配置 */
 const checkinPagination = reactive({
   pageNum: 1,
   pageSize: 10,
   total: 0
 })
 
+/** AI计划历史列表 */
 const aiPlanHistory = ref([])
+
+/** AI计划加载状态 */
 const aiPlanLoading = ref(false)
+
+/** AI计划排序方式（desc/asc） */
 const planSortBy = ref('desc')
+
+/** AI计划分页配置 */
 const aiPlanPagination = reactive({
   pageNum: 1,
   pageSize: 9,
   total: 0
 })
 
+/** 计划详情弹窗可见性 */
 const planDetailVisible = ref(false)
+
+/** 当前选中的AI计划 */
 const selectedPlan = ref(null)
+
+/** 体重编辑对话框可见性 */
 const editDialogVisible = ref(false)
+
+/** 体重编辑加载状态 */
 const editLoading = ref(false)
+
+/** 体重编辑表单 */
 const editForm = reactive({
-  id: null,
-  weight: null,
-  recordDate: null
+  id: null,          // 记录ID
+  weight: null,      // 体重值
+  recordDate: null   // 记录日期
 })
 
+/** 体重搜索表单 */
 const searchForm = reactive({
-  startDate: null,
-  endDate: null,
-  sortBy: ''
+  startDate: null,  // 开始日期
+  endDate: null,    // 结束日期
+  sortBy: ''        // 排序方式
 })
 
+/**
+ * 获取体重历史记录
+ */
 const fetchWeightHistory = async () => {
   weightTableLoading.value = true
   try {
@@ -348,20 +388,32 @@ const fetchWeightHistory = async () => {
   }
 }
 
+/**
+ * 提交体重记录
+ */
 const handleRecordWeight = async () => {
+  // 验证体重输入
   if (!weightForm.weight) {
     ElMessage.warning('请输入体重')
     return
   }
+  
+  // 设置加载状态
   weightLoading.value = true
+  
   try {
+    // 调用API记录体重
     await recordWeight({
       weight: weightForm.weight,
       remark: weightForm.remark
     })
+    
+    // 成功提示并清空表单
     ElMessage.success('体重记录成功')
     weightForm.weight = null
     weightForm.remark = ''
+    
+    // 刷新体重列表
     await fetchWeightHistory()
   } catch {
     // 错误提示已在请求拦截器中统一处理
@@ -370,12 +422,21 @@ const handleRecordWeight = async () => {
   }
 }
 
+/**
+ * 删除体重记录
+ * @param {number} id - 体重记录ID
+ */
 const handleDeleteWeight = async (id) => {
   try {
+    // 弹出确认对话框
     await ElMessageBox.confirm('确定要删除这条体重记录吗？', '提示', {
       type: 'warning'
     })
+    
+    // 调用API删除记录
     await deleteWeightRecord(id)
+    
+    // 成功提示并刷新列表
     ElMessage.success('删除成功')
     await fetchWeightHistory()
   } catch {
@@ -383,23 +444,42 @@ const handleDeleteWeight = async (id) => {
   }
 }
 
+/**
+ * 打开体重编辑对话框
+ * @param {object} row - 体重记录数据
+ */
 const handleEditWeight = (row) => {
+  // 填充编辑表单
   editForm.id = row.id
   editForm.weight = row.weight
   editForm.recordDate = row.recordDate
+  
+  // 显示编辑对话框
   editDialogVisible.value = true
 }
 
+/**
+ * 确认编辑体重记录
+ */
 const handleConfirmEdit = async () => {
+  // 验证体重输入
   if (!editForm.weight) {
     ElMessage.warning('请输入体重')
     return
   }
+  
+  // 设置加载状态
   editLoading.value = true
+  
   try {
+    // 调用API更新体重记录
     await updateWeightRecord(editForm.id, { weight: editForm.weight })
+    
+    // 成功提示并关闭对话框
     ElMessage.success('体重更新成功')
     editDialogVisible.value = false
+    
+    // 刷新体重列表
     await fetchWeightHistory()
   } catch {
     // 错误提示已在请求拦截器中统一处理
@@ -408,21 +488,35 @@ const handleConfirmEdit = async () => {
   }
 }
 
+/**
+ * 重置搜索条件
+ */
 const resetSearch = () => {
+  // 清空搜索表单
   searchForm.startDate = null
   searchForm.endDate = null
   searchForm.sortBy = ''
+  
+  // 重置页码
   weightPagination.pageNum = 1
+  
+  // 重新获取数据
   fetchWeightHistory()
 }
 
+/**
+ * 获取打卡历史记录
+ */
 const fetchCheckinHistory = async () => {
   checkinLoading.value = true
   try {
+    // 调用API获取打卡历史
     const res = await getCheckinHistory({
       pageNum: checkinPagination.pageNum,
       pageSize: checkinPagination.pageSize
     })
+    
+    // 更新打卡列表和总数
     checkinHistory.value = res.data?.records || []
     checkinPagination.total = res.data?.total || 0
   } finally {
@@ -430,13 +524,19 @@ const fetchCheckinHistory = async () => {
   }
 }
 
+/**
+ * 获取AI计划历史记录
+ */
 const fetchAiPlanHistory = async () => {
   aiPlanLoading.value = true
   try {
+    // 调用API获取AI计划历史
     const res = await getAiPlanHistory({
       pageNum: aiPlanPagination.pageNum,
       pageSize: aiPlanPagination.pageSize
     })
+    
+    // 更新计划列表和总数
     aiPlanHistory.value = res.data?.records || []
     aiPlanPagination.total = res.data?.total || 0
   } finally {
@@ -444,24 +544,45 @@ const fetchAiPlanHistory = async () => {
   }
 }
 
+/**
+ * 显示AI计划详情弹窗
+ * @param {object} row - AI计划数据
+ */
 const showPlanDetail = (row) => {
+  // 设置选中的计划
   selectedPlan.value = row
+  // 显示详情弹窗
   planDetailVisible.value = true
 }
 
+/**
+ * 删除AI计划
+ * @param {number} id - 计划ID
+ */
 const handleDeletePlan = async (id) => {
   try {
+    // 弹出确认对话框
     await ElMessageBox.confirm('确定要删除这个AI计划吗？', '提示', {
       type: 'warning'
     })
+    
+    // 调用API删除计划
     await deleteAiPlan(id)
+    
+    // 成功提示并刷新列表
     ElMessage.success('删除成功')
     await fetchAiPlanHistory()
   } catch {
     // 取消或错误均由拦截器处理
   }
 }
+
+/**
+ * 标签页切换处理
+ * @param {string} name - 标签页名称
+ */
 const handleTabChange = (name) => {
+  // 根据标签页名称加载对应数据
   if (name === 'weight') {
     fetchWeightHistory()
   } else if (name === 'checkin') {
@@ -471,60 +592,98 @@ const handleTabChange = (name) => {
   }
 }
 
+/**
+ * 格式化日期（仅日期部分）
+ * @param {string} dateStr - 日期字符串
+ * @returns {string} 格式化后的日期
+ */
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
   return date.toLocaleDateString('zh-CN')
 }
 
+/**
+ * 格式化时间
+ * @param {string} timeStr - 时间字符串
+ * @returns {string} 格式化后的时间
+ */
 const formatTime = (timeStr) => {
   if (!timeStr) return '-'
   const date = new Date(timeStr)
   return date.toLocaleString('zh-CN')
 }
 
+/**
+ * 格式化日期时间
+ * @param {string} dateStr - 日期时间字符串
+ * @returns {string} 格式化后的日期时间
+ */
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
   return date.toLocaleString('zh-CN')
 }
 
+/**
+ * 格式化计划内容（JSON格式化）
+ * @param {string} content - 计划内容字符串
+ * @returns {string} 格式化后的内容
+ */
 const formatPlanContent = (content) => {
-  if (!content)
-    return '';
+  if (!content) return ''
   
   try {
-    const obj = JSON.parse(content);
-    return JSON.stringify(obj, null, 2);
+    // 尝试解析JSON并格式化输出
+    const obj = JSON.parse(content)
+    return JSON.stringify(obj, null, 2)
   } catch {
-    return content;
+    // 非JSON格式直接返回原内容
+    return content
   }
 }
 
+/**
+ * 解析AI计划内容为结构化数据（计算属性）
+ * 将JSON格式的计划内容解析为前端可用的结构化对象
+ */
 const planDetailText = computed(() => {
+  // 计划内容为空时返回null
   if (!selectedPlan.value?.planContent) return null
+  
   try {
+    // 解析JSON内容
     const obj = JSON.parse(selectedPlan.value.planContent)
+    
+    // 验证weeklyPlan字段
     if (!obj.weeklyPlan || !Array.isArray(obj.weeklyPlan)) return null
+    
+    // 转换为结构化数据
     return {
-      summary: obj.summary || null,
+      summary: obj.summary || null,  // 总结部分（饮食建议、运动建议、健康提示）
       days: obj.weeklyPlan.map(day => ({
-        dayName: day.dayName || '',
+        dayName: day.dayName || '',  // 星期名称
         diet: (day.diet || []).map(m => ({
-          type: m.type || '',
-          name: m.name || '',
-          calorie: m.calorie || ''
+          type: m.type || '',      // 餐次类型（早餐/午餐/晚餐）
+          name: m.name || '',      // 食物名称
+          calorie: m.calorie || '' // 热量
         })),
         exercise: (day.exercise || []).map(e => ({
-          name: e.name || '',
-          duration: e.duration || ''
+          name: e.name || '',      // 运动名称
+          duration: e.duration || '' // 运动时长
         }))
       }))
     }
   } catch {
+    // 解析失败返回null
     return null
   }
 })
+
+/**
+ * 页面初始化生命周期钩子
+ * 初始化时加载体重历史记录
+ */
 onMounted(() => {
   fetchWeightHistory()
 })

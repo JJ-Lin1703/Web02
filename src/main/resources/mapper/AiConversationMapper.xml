@@ -16,6 +16,7 @@
         <result column="is_deleted" property="isDeleted"/>
     </resultMap>
 
+    <!-- 插入对话记录 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ai_conversation (user_id, session_id, question, answer, doc_based, create_time, is_deleted)
         VALUES (#{userId}, #{sessionId}, #{question}, #{answer}, #{docBased}, NOW(), 0)
@@ -27,6 +28,7 @@
         ORDER BY create_time DESC
     </select>
 
+    <!-- 根据会话ID查询对话记录（按时间升序） -->
     <select id="findBySessionId" resultMap="BaseResultMap">
         SELECT * FROM ai_conversation
         WHERE session_id = #{sessionId} AND is_deleted = 0

@@ -1,6 +1,7 @@
 <template>
+  <!-- 智能问答页面主容器 -->
   <div class="doc-qa-wrapper">
-    <!-- 左侧历史面板 -->
+    <!-- 左侧历史对话面板 -->
     <div class="history-panel" :class="{ collapsed: !showHistory }">
       <div class="history-header">
         <div class="header-title">
@@ -151,6 +152,12 @@
 </template>
 
 <script setup>
+/**
+ * @file DocQA.vue
+ * @description 智能问答页面，基于向量RAG技术实现文档检索问答
+ * @author SmartHealth Team
+ * @date 2024
+ */
 import { ref, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Vue3Lottie } from 'vue3-lottie'
@@ -159,89 +166,175 @@ import {
 } from '@element-plus/icons-vue'
 import { docAsk, listConversations, getConversation } from '@/api/user'
 
+/** 用户输入的问题 */
 const question = ref('')
+
+/** 是否正在发送请求（AI思考中） */
 const asking = ref(false)
+
+/** 聊天消息列表，每个消息包含 role（user/assistant）、content（内容）、docBased（是否基于文档） */
 const messages = ref([])
+
+/** 聊天区域 DOM 引用，用于滚动操作 */
 const chatArea = ref(null)
+
+/** 当前会话 ID，用于关联历史对话 */
 const sessionId = ref('')
+
+/** 是否显示左侧历史对话面板 */
 const showHistory = ref(true)
 
+/** 历史会话列表，每个会话包含 sessionId、question、createTime */
 const sessions = ref([])
 
+/**
+ * 页面初始化生命周期钩子
+ * 初始化时创建新对话并加载历史会话列表
+ */
 onMounted(async () => {
-  newChat()
-  await loadSessions()
+  newChat()           // 创建新对话生成会话ID
+  await loadSessions() // 异步加载历史会话列表
 })
 
+/**
+ * 创建新对话
+ * 生成新的会话ID并清空消息列表，开始新一轮对话
+ */
 const newChat = () => {
+  // 使用浏览器原生API生成唯一会话ID
   sessionId.value = crypto.randomUUID()
+  // 清空消息列表
   messages.value = []
 }
 
+/**
+ * 加载历史会话列表
+ * 从后端API获取用户的历史对话记录
+ */
 const loadSessions = async () => {
   try {
+    // 调用API获取会话列表
     const res = await listConversations()
+    // 更新会话列表，若无数据则设为空数组
     sessions.value = res.sessions || []
   } catch (e) {
-    // 静默忽略
+    // 静默忽略加载失败，保持会话列表为空
   }
 }
 
+/**
+ * 加载指定的历史会话
+ * 根据会话ID从后端获取完整的对话历史并渲染到聊天区域
+ * @param {string} sid - 会话ID
+ */
 const loadSession = async (sid) => {
   try {
+    // 调用API获取指定会话的详细消息记录
     const res = await getConversation(sid)
     const list = res.messages || []
+    
+    // 清空当前消息列表
     messages.value = []
+    
+    // 将消息转换为前端所需格式
     list.forEach(m => {
+      // 添加用户提问消息
       messages.value.push({ role: 'user', content: m.question })
+      // 添加AI回答消息
       messages.value.push({
         role: 'assistant',
         content: m.answer || '未能获取回答',
-        docBased: m.docBased === 1
+        docBased: m.docBased === 1 // 转换为布尔值
       })
     })
+    
+    // 更新当前会话ID
     sessionId.value = sid
+    
+    // 等待DOM更新后滚动到底部
     await nextTick()
     scrollToBottom()
   } catch (e) {
+    // 加载失败时显示错误提示
     ElMessage.error('加载对话失败')
   }
 }
 
+/**
+ * 格式化时间戳为可读字符串
+ * 将毫秒时间戳转换为 MM/DD HH:MM 格式
+ * @param {string|number} t - 时间戳（毫秒）
+ * @returns {string} 格式化后的时间字符串，如 "12/25 14:30"
+ */
 const formatTime = (t) => {
+  // 时间戳为空时返回空字符串
   if (!t) return ''
+  
   const d = new Date(t)
+  // 格式化月份、日期、小时、分钟
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+/**
+ * 滚动聊天区域到底部
+ * 等待DOM更新完成后执行滚动操作，确保新消息可见
+ */
 const scrollToBottom = async () => {
+  // 等待下一个DOM更新周期
   await nextTick()
+  
+  // 若聊天区域存在，滚动到底部
   if (chatArea.value) {
     chatArea.value.scrollTop = chatArea.value.scrollHeight
   }
 }
 
+/**
+ * 发送问题给AI助手
+ * 用户提交问题后的核心处理逻辑，包括发送请求、接收回复、更新UI
+ */
 const handleAsk = async () => {
+  // 去除首尾空格
   const q = question.value.trim()
+  
+  // 验证：问题为空或正在请求中则不处理
   if (!q || asking.value) return
 
+  // 添加用户消息到消息列表
   messages.value.push({ role: 'user', content: q })
+  
+  // 清空输入框
   question.value = ''
+  
+  // 设置请求状态为"思考中"
   asking.value = true
+  
+  // 滚动到底部显示新消息
   await scrollToBottom()
 
   try {
+    // 调用后端问答API
     const res = await docAsk(q, sessionId.value)
+    
+    // 添加AI回复到消息列表
     messages.value.push({
       role: 'assistant',
       content: res.answer || '未能获取回答',
-      docBased: res.docBased
+      docBased: res.docBased // 是否基于知识库文档回答
     })
+    
+    // 更新历史会话列表
     await loadSessions()
   } catch (error) {
-    messages.value.push({ role: 'assistant', content: '问答请求失败：' + (error.response?.data?.error || error.message) })
+    // 请求失败时添加错误消息
+    messages.value.push({ 
+      role: 'assistant', 
+      content: '问答请求失败：' + (error.response?.data?.error || error.message) 
+    })
   } finally {
+    // 无论成功与否，都结束请求状态
     asking.value = false
+    // 滚动到底部显示最新消息
     await scrollToBottom()
   }
 }

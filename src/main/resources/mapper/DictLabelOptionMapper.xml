@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    标签选项Mapper
+    用于存储健康档案的标签字典选项
+    表名：dict_label_options
+-->
 <mapper namespace="org.example.web02.mapper.DictLabelOptionMapper">
 
     <resultMap id="BaseResultMap" type="org.example.web02.entity.DictLabelOption">
@@ -27,6 +32,7 @@
         ORDER BY type, sort ASC
     </select>
 
+    <!-- 查询所有标签选项（按类型和排序字段升序） -->
     <select id="findAll" resultMap="BaseResultMap">
         SELECT id, type, label_name, sort, create_time, update_time, is_deleted
         FROM dict_label_options
@@ -34,6 +40,7 @@
         ORDER BY type, sort ASC
     </select>
 
+    <!-- 根据ID查询标签选项 -->
     <select id="findById" resultMap="BaseResultMap">
         SELECT id, type, label_name, sort, create_time, update_time, is_deleted
         FROM dict_label_options

@@ -107,24 +107,40 @@ import { useUserStore } from '@/stores/user'
 import { userLogin, userRegister, getUserInfo } from '@/api/user'
 import { Vue3Lottie } from 'vue3-lottie'
 
+/** Vue Router 路由实例 */
 const router = useRouter()
+
+/** 用户状态管理 store */
 const userStore = useUserStore()
 
+/** 当前激活的标签页（login/register） */
 const activeTab = ref('login')
+
+/** 登录表单引用 */
 const loginFormRef = ref(null)
+
+/** 注册表单引用 */
 const registerFormRef = ref(null)
 
+/** 登录表单数据 */
 const loginForm = reactive({
-  username: '',
-  password: ''
+  username: '',  // 用户名
+  password: ''   // 密码
 })
 
+/** 注册表单数据 */
 const registerForm = reactive({
-  username: '',
-  password: '',
-  confirmPassword: ''
+  username: '',        // 用户名
+  password: '',        // 密码
+  confirmPassword: ''  // 确认密码
 })
 
+/**
+ * 用户名验证函数
+ * @param {object} rule - 验证规则
+ * @param {string} value - 输入值
+ * @param {function} callback - 验证回调
+ */
 const validateUsername = (rule, value, callback) => {
   if (!value) {
     callback(new Error('请输入用户名'))
@@ -137,6 +153,12 @@ const validateUsername = (rule, value, callback) => {
   }
 }
 
+/**
+ * 密码验证函数
+ * @param {object} rule - 验证规则
+ * @param {string} value - 输入值
+ * @param {function} callback - 验证回调
+ */
 const validatePassword = (rule, value, callback) => {
   if (!value) {
     callback(new Error('请输入密码'))
@@ -149,6 +171,12 @@ const validatePassword = (rule, value, callback) => {
   }
 }
 
+/**
+ * 确认密码验证函数
+ * @param {object} rule - 验证规则
+ * @param {string} value - 输入值
+ * @param {function} callback - 验证回调
+ */
 const validateConfirmPassword = (rule, value, callback) => {
   if (!value) {
     callback(new Error('请确认密码'))
@@ -159,23 +187,35 @@ const validateConfirmPassword = (rule, value, callback) => {
   }
 }
 
+/** 登录表单验证规则 */
 const loginRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+/** 注册表单验证规则 */
 const registerRules = {
   username: [{ validator: validateUsername, trigger: 'blur' }],
   password: [{ validator: validatePassword, trigger: 'blur' }],
   confirmPassword: [{ validator: validateConfirmPassword, trigger: 'blur' }]
 }
 
+/**
+ * 处理登录请求
+ */
 const handleLogin = async () => {
   try {
+    // 表单验证
     await loginFormRef.value.validate()
+    
+    // 调用登录API
     const res = await userLogin(loginForm)
+    
+    // 保存token和用户信息到状态管理
     userStore.setToken(res.data.token)
     userStore.setUserInfo(res.data)
+    
+    // 登录成功提示并跳转到首页
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error) {
@@ -183,14 +223,22 @@ const handleLogin = async () => {
   }
 }
 
+/**
+ * 处理注册请求
+ */
 const handleRegister = async () => {
   try {
+    // 表单验证
     await registerFormRef.value.validate()
+    
+    // 调用注册API
     await userRegister({
       username: registerForm.username,
       password: registerForm.password,
       confirmPassword: registerForm.confirmPassword
     })
+    
+    // 注册成功提示并切换到登录标签页
     ElMessage.success('注册成功，请登录')
     activeTab.value = 'login'
   } catch (error) {
@@ -198,19 +246,31 @@ const handleRegister = async () => {
   }
 }
 
+/**
+ * 获取用户信息
+ * 登录成功后调用，获取完整用户资料
+ */
 const fetchUserInfo = async () => {
   const res = await getUserInfo()
   userStore.setUserInfo(res.data)
 }
 
-// 粒子动画
+/** 粒子动画画布引用 */
 const particleCanvas = ref(null)
 
+/**
+ * 初始化粒子动画效果
+ * 创建40个白色粒子在背景中漂浮
+ */
 const initParticles = () => {
   const canvas = particleCanvas.value
   if (!canvas) return
+  
   const ctx = canvas.getContext('2d')
 
+  /**
+   * 调整画布大小以适应窗口
+   */
   const resizeCanvas = () => {
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
@@ -218,21 +278,30 @@ const initParticles = () => {
   resizeCanvas()
   window.addEventListener('resize', resizeCanvas)
 
+  /**
+   * 粒子类
+   * 负责粒子的位置、速度、大小和透明度
+   */
   class Particle {
     constructor() {
-      this.x = Math.random() * canvas.width
-      this.y = Math.random() * canvas.height
-      this.vx = (Math.random() - 0.5) * 0.8
-      this.vy = (Math.random() - 0.5) * 0.8
-      this.radius = Math.random() * 3 + 1
-      this.alpha = Math.random() * 0.3 + 0.1
+      this.x = Math.random() * canvas.width      // x坐标
+      this.y = Math.random() * canvas.height     // y坐标
+      this.vx = (Math.random() - 0.5) * 0.8     // x方向速度
+      this.vy = (Math.random() - 0.5) * 0.8     // y方向速度
+      this.radius = Math.random() * 3 + 1        // 半径(1-4px)
+      this.alpha = Math.random() * 0.3 + 0.1     // 透明度(0.1-0.4)
     }
+
+    /** 更新粒子位置，边界反弹 */
     update() {
       this.x += this.vx
       this.y += this.vy
+      // 边界检测，碰到边界反弹
       if (this.x < 0 || this.x > canvas.width) this.vx *= -1
       if (this.y < 0 || this.y > canvas.height) this.vy *= -1
     }
+
+    /** 绘制粒子 */
     draw() {
       ctx.beginPath()
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2)
@@ -241,11 +310,16 @@ const initParticles = () => {
     }
   }
 
+  // 创建粒子数组
   const particles = []
   for (let i = 0; i < 40; i++) {
     particles.push(new Particle())
   }
 
+  /**
+   * 动画循环
+   * 清除画布 -> 更新粒子位置 -> 绘制粒子 -> 请求下一帧
+   */
   const animate = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     particles.forEach(p => {
@@ -257,8 +331,11 @@ const initParticles = () => {
   animate()
 }
 
+/**
+ * 页面初始化生命周期钩子
+ */
 onMounted(() => {
-  initParticles()
+  initParticles()  // 初始化粒子动画
 })
 </script>
 
