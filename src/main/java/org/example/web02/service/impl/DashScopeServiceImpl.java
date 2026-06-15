@@ -228,9 +228,9 @@ public class DashScopeServiceImpl implements DashScopeService {
         }
 
         // Step 4: RAG检索 - 根据用户标签从知识库获取相关健康知识
-        log.warn("=== RAG DEBUG: 准备检索知识库, userId={} ===", userId);
+        log.warn("=== RAG DEBUG: prepare to retrieve knowledge base, userId={} ===", userId);
         List<KnowledgeBase> ragKnowledge = knowledgeBaseService.retrieveRelevantKnowledge(userId);
-        log.warn("=== RAG DEBUG: 检索完成, 结果数量={} ===", ragKnowledge != null ? ragKnowledge.size() : 0);
+        log.warn("=== RAG DEBUG: retrieval completed, result count={} ===", ragKnowledge != null ? ragKnowledge.size() : 0);
         
         // 将检索到的知识追加到上下文
         if (ragKnowledge != null && !ragKnowledge.isEmpty()) {

@@ -24,7 +24,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/smart_health_helper?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
+    password: ljj20051101
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -56,3 +56,8 @@ logging:
   level:
     org.example.web02: DEBUG
     org.mybatis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  charset:
+    console: UTF-8
+    file: UTF-8

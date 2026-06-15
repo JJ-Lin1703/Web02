@@ -114,7 +114,7 @@ public class ClockRecordServiceImpl implements ClockRecordService {
     @Override
     @Transactional
     public void deleteClockRecord(Long userId, Long recordId) {
-        ClockRecord record = getClockRecordById(userId, recordId);
+        //ClockRecord record = getClockRecordById(userId, recordId);
         clockRecordMapper.deleteById(recordId);
     }
 

@@ -142,7 +142,7 @@
             <el-pagination
               v-model:current-page="aiPlanPagination.pageNum"
               v-model:page-size="aiPlanPagination.pageSize"
-              :page-sizes="[10, 20, 50]"
+              :page-sizes="[9, 18, 36]"
               :total="aiPlanPagination.total"
               layout="total, sizes, prev, pager, next, jumper"
               @size-change="fetchAiPlanHistory"
@@ -310,7 +310,7 @@ const aiPlanLoading = ref(false)
 const planSortBy = ref('desc')
 const aiPlanPagination = reactive({
   pageNum: 1,
-  pageSize: 10,
+  pageSize: 9,
   total: 0
 })
 

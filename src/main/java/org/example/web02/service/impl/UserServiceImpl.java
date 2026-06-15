@@ -202,7 +202,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void resetUserPassword(Long userId, String newPassword) {
-        User user = findById(userId);
+        //User user = findById(userId);
 
         if (newPassword.length() < 6 || newPassword.length() > 16) {
             throw new BusinessException("密码长度必须在6-16位之间");

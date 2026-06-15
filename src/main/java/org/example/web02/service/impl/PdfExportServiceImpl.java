@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+//import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -70,7 +70,7 @@ public class PdfExportServiceImpl implements PdfExportService {
             try {
                 ClassPathResource fontResource = new ClassPathResource("fonts/simhei.ttf");
                 if (fontResource.exists()) {
-                    InputStream is = fontResource.getInputStream();
+                    //InputStream is = fontResource.getInputStream();
                     chineseBaseFont = BaseFont.createFont("fonts/simhei.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
                     log.info("从classpath加载中文字体成功");
                     return;
