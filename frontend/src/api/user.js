@@ -371,25 +371,17 @@ export const getWarnings = () => {
 
 // ======================== 向量RAG ===========================
 
-/** 上传PDF文档（Base64编码，绕过multipart） */
+/** 上传TXT文档（multipart文件上传） */
 export const uploadPdfDoc = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const base64 = e.target.result.split(',')[1] // 去掉 data:xxx;base64, 前缀
-      const token = useUserStore().token
-      axios.post('http://localhost:8081/api/doc-rag/upload', {
-        fileName: file.name,
-        fileContent: base64
-      }, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        timeout: 120000
-      }).then(res => {
-        resolve({ data: res.data })
-      }).catch(reject)
-    }
-    reader.onerror = () => reject(new Error('文件读取失败'))
-    reader.readAsDataURL(file)
+  const formData = new FormData()
+  formData.append('file', file)
+  const token = useUserStore().token
+  return axios.post('http://localhost:8081/api/doc-rag/upload', formData, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': 'multipart/form-data'
+    },
+    timeout: 300000
   })
 }
 
@@ -407,6 +399,14 @@ export const docAsk = (question, sessionId) => {
 export const listDocRagDocs = () => {
   return request({
     url: '/doc-rag/docs',
+    method: 'get'
+  })
+}
+
+/** 查询上传任务状态 */
+export const getUploadStatus = (taskId) => {
+  return request({
+    url: `/doc-rag/upload/status/${taskId}`,
     method: 'get'
   })
 }

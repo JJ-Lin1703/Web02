@@ -29,7 +29,7 @@
           </div>
 
           <div v-else-if="!currentPlan" class="empty-container">
-            <el-empty description="暂无健康计划，点击上方按钮生成" />
+            <EmptyState description="暂无健康计划，点击上方按钮生成" />
           </div>
 
           <div v-else class="plan-container">
@@ -76,7 +76,7 @@
                           class="edit-btn" 
                           @click="openEditDialog('diet', mealIndex)"
                         >
-                          <Edit />
+                          <Edit /> 编辑
                         </el-button>
                       </div>
                     </div>
@@ -92,7 +92,7 @@
                           class="edit-btn" 
                           @click="openEditDialog('exercise', exIndex)"
                         >
-                          <Edit />
+                          <Edit /> 编辑
                         </el-button>
                       </div>
                     </div>
@@ -110,10 +110,51 @@
             <span class="card-title">计划详情</span>
           </template>
           <div v-if="!currentPlan" class="empty-container">
-            <el-empty description="暂无计划详情" />
+            <EmptyState description="暂无计划详情" />
           </div>
           <div v-else class="detail-content">
-            <pre>{{ formatPlanContent(currentPlan.planContent) }}</pre>
+            <div v-if="planDetailText" class="plan-detail-text">
+              <!-- 总结区域 -->
+              <div v-if="planDetailText.summary" class="detail-summary">
+                <div v-if="planDetailText.summary.diet && planDetailText.summary.diet.length" class="summary-block">
+                  <h3 class="summary-title">饮食建议</h3>
+                  <ul class="summary-list">
+                    <li v-for="(item, i) in planDetailText.summary.diet" :key="'d'+i">{{ item }}</li>
+                  </ul>
+                </div>
+                <div v-if="planDetailText.summary.exercise && planDetailText.summary.exercise.length" class="summary-block">
+                  <h3 class="summary-title">运动建议</h3>
+                  <ul class="summary-list">
+                    <li v-for="(item, i) in planDetailText.summary.exercise" :key="'e'+i">{{ item }}</li>
+                  </ul>
+                </div>
+                <div v-if="planDetailText.summary.tips && planDetailText.summary.tips.length" class="summary-block">
+                  <h3 class="summary-title">健康提示</h3>
+                  <ul class="summary-list">
+                    <li v-for="(item, i) in planDetailText.summary.tips" :key="'t'+i">{{ item }}</li>
+                  </ul>
+                </div>
+              </div>
+              <!-- 每日计划 -->
+              <h2 class="detail-section-title">一周详细计划</h2>
+              <div v-for="(day, dIdx) in planDetailText.days" :key="dIdx" class="detail-day">
+                <h3 class="detail-day-title">{{ day.dayName }}</h3>
+                <div class="detail-section">
+                  <h4>饮食安排</h4>
+                  <div v-for="(meal, mIdx) in day.diet" :key="mIdx" class="detail-item">
+                    <span class="detail-label">{{ meal.type }}</span>
+                    <span class="detail-value">{{ meal.name }}（{{ meal.calorie }}）</span>
+                  </div>
+                </div>
+                <div class="detail-section">
+                  <h4>运动安排</h4>
+                  <div v-for="(ex, eIdx) in day.exercise" :key="eIdx" class="detail-item">
+                    <span class="detail-value">{{ ex.name }}：{{ ex.duration }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <pre v-else>{{ formatPlanContent(currentPlan.planContent) }}</pre>
           </div>
         </el-card>
       </el-tab-pane>
@@ -201,6 +242,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Bowl, TrendCharts, Edit } from '@element-plus/icons-vue'
 import { Vue3Lottie } from 'vue3-lottie'
 import { generateAiPlan, getLatestAiPlan, exportAiPlanPdf, tweakAiPlan, updateAiPlanContent } from '@/api/user'
+import EmptyState from '@/components/EmptyState.vue'
 
 const activeTab = ref('plan')
 const loading = ref(false)
@@ -295,6 +337,31 @@ const formatPlanContent = (content) => {
     return content
   }
 }
+
+const planDetailText = computed(() => {
+  if (!currentPlan.value?.planContent) return null
+  try {
+    const obj = JSON.parse(currentPlan.value.planContent)
+    if (!obj.weeklyPlan || !Array.isArray(obj.weeklyPlan)) return null
+    return {
+      summary: obj.summary || null,
+      days: obj.weeklyPlan.map(day => ({
+        dayName: day.dayName || '',
+        diet: (day.diet || []).map(m => ({
+          type: m.type || '',
+          name: m.name || '',
+          calorie: m.calorie || ''
+        })),
+        exercise: (day.exercise || []).map(e => ({
+          name: e.name || '',
+          duration: e.duration || ''
+        }))
+      }))
+    }
+  } catch {
+    return null
+  }
+})
 
 const handleExportPdf = async () => {
   if (!currentPlan.value) {
@@ -629,11 +696,13 @@ onMounted(() => {
   opacity: 1 !important;
   color: #409eff !important;
   margin-left: 12px !important;
-  padding: 6px 12px;
+  padding: 6px 14px;
   flex-shrink: 0;
   border: 1px solid #409eff;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #fff;
+  font-size: 13px;
+  gap: 4px;
   transition: all 0.2s ease;
   display: flex !important;
   align-items: center;
@@ -641,6 +710,8 @@ onMounted(() => {
   
   &:hover {
     background: #ecf5ff;
+    border-color: #337ecc;
+    color: #337ecc !important;
   }
 }
 
@@ -694,6 +765,121 @@ onMounted(() => {
   font-size: 14px;
   line-height: 1.6;
   color: #303133;
+}
+
+.plan-detail-text {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.detail-day {
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-day:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.detail-day-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #409eff;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #409eff;
+  display: inline-block;
+}
+
+.detail-section {
+  margin-bottom: 14px;
+}
+
+.detail-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: #606266;
+  font-weight: 600;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.detail-label {
+  display: inline-block;
+  min-width: 48px;
+  padding: 2px 10px;
+  background: #ecf5ff;
+  color: #409eff;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 12px;
+  text-align: center;
+}
+
+.detail-value {
+  color: #303133;
+  line-height: 1.5;
+}
+
+.detail-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+  padding: 20px;
+  background: #f0f9ff;
+  border-radius: 12px;
+  border: 1px solid #d0e8ff;
+}
+
+.summary-block {
+  flex: 1;
+  min-width: 200px;
+}
+
+.summary-title {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  color: #409eff;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #b3d8ff;
+}
+
+.summary-list {
+  margin: 0;
+  padding-left: 18px;
+  list-style: disc;
+}
+
+.summary-list li {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.detail-section-title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #303133;
+  font-weight: 700;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e8e8e8;
 }
 
 .tweak-preview {

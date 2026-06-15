@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.web02.mapper.UploadTaskMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.web02.entity.UploadTask">
+        <id column="id" property="id"/>
+        <result column="task_id" property="taskId"/>
+        <result column="file_name" property="fileName"/>
+        <result column="text_length" property="textLength"/>
+        <result column="status" property="status"/>
+        <result column="error_msg" property="errorMsg"/>
+        <result column="doc_id" property="docId"/>
+        <result column="retry_count" property="retryCount"/>
+        <result column="max_retries" property="maxRetries"/>
+        <result column="user_id" property="userId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO upload_task (task_id, file_name, text_length, status, retry_count, max_retries, user_id, create_time, update_time)
+        VALUES (#{taskId}, #{fileName}, #{textLength}, 'PENDING', 0, 3, #{userId}, NOW(), NOW())
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE upload_task
+        SET update_time = NOW()
+        <if test="status != null">, status = #{status}</if>
+        <if test="errorMsg != null">, error_msg = #{errorMsg}</if>
+        <if test="docId != null">, doc_id = #{docId}</if>
+        <if test="retryCount != null">, retry_count = #{retryCount}</if>
+        WHERE task_id = #{taskId}
+    </update>
+
+    <select id="findByTaskId" resultMap="BaseResultMap">
+        SELECT * FROM upload_task WHERE task_id = #{taskId}
+    </select>
+
+    <select id="findPendingRetry" resultMap="BaseResultMap">
+        SELECT * FROM upload_task
+        WHERE status = 'FAILED' AND retry_count &lt; #{maxRetries}
+        ORDER BY update_time ASC
+        LIMIT 10
+    </select>
+
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT * FROM upload_task
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*) FROM upload_task WHERE status = #{status}
+    </select>
+
+</mapper>

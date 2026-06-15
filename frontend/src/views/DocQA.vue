@@ -3,7 +3,11 @@
     <!-- 左侧历史面板 -->
     <div class="history-panel" :class="{ collapsed: !showHistory }">
       <div class="history-header">
-        <el-button type="primary" size="small" @click="newChat" :icon="Plus" style="width: 100%;">
+        <div class="header-title">
+          <el-icon :size="18" color="#409eff"><Document /></el-icon>
+          <span>历史对话</span>
+        </div>
+        <el-button type="primary" size="small" @click="newChat" :icon="Plus" class="new-chat-btn">
           新对话
         </el-button>
       </div>
@@ -14,10 +18,18 @@
           :class="['history-item', { active: sessionId === s.sessionId }]"
           @click="loadSession(s.sessionId)"
         >
-          <div class="history-title">{{ s.question || '新对话' }}</div>
-          <div class="history-time">{{ formatTime(s.createTime) }}</div>
+          <div class="history-icon">
+            <el-icon :size="16" color="#409eff"><Document /></el-icon>
+          </div>
+          <div class="history-content">
+            <div class="history-title">{{ s.question || '新对话' }}</div>
+            <div class="history-time">{{ formatTime(s.createTime) }}</div>
+          </div>
         </div>
-        <div v-if="sessions.length === 0" class="history-empty">暂无历史对话</div>
+        <div v-if="sessions.length === 0" class="history-empty">
+          <el-icon :size="32" color="#d9d9d9"><Document /></el-icon>
+          <p>暂无历史对话</p>
+        </div>
       </div>
     </div>
 
@@ -25,72 +37,115 @@
     <div class="qa-main">
       <!-- 折叠按钮 -->
       <div class="toggle-bar">
-        <el-button :icon="showHistory ? ArrowLeft : ArrowRight" text size="small" @click="showHistory = !showHistory" />
+        <el-button :icon="showHistory ? ArrowLeftBold : ArrowRightBold" text size="small" @click="showHistory = !showHistory" class="toggle-btn" />
       </div>
 
-      <el-card class="qa-card">
-        <template #header>
-          <div class="card-header">
-            <el-icon :size="20" color="#409eff"><ChatDotRound /></el-icon>
-            <span class="card-title">智能问答</span>
-            <span class="card-subtitle">优先基于知识库文档回答，未命中则以通用知识回答</span>
+      <div class="qa-container">
+        <!-- 顶部标题栏 -->
+        <div class="qa-header">
+          <div class="header-left">
+            <div class="avatar-wrapper">
+              <el-icon :size="28" color="#fff"><ChatDotRound /></el-icon>
+            </div>
+            <div class="header-info">
+              <h3 class="qa-title">智能助手</h3>
+              <p class="qa-subtitle">优先基于知识库回答，未命中则用通用知识</p>
+            </div>
           </div>
-        </template>
+          <div class="header-actions">
+            <el-button text size="small" @click="newChat">
+              新对话
+            </el-button>
+          </div>
+        </div>
 
         <!-- 聊天消息区 -->
         <div class="chat-area" ref="chatArea">
-          <div v-if="messages.length === 0" class="chat-empty">
-            <el-icon :size="64" color="#c0c4cc"><ChatLineSquare /></el-icon>
-            <p>输入问题，AI 优先从知识库检索作答，未命中则用通用知识回答</p>
+          <!-- 欢迎消息 -->
+          <div v-if="messages.length === 0" class="welcome-section">
+            <div class="welcome-avatar">
+              <Vue3Lottie :animationLink="'/chatbot.json'" :width="160" :height="160" :loop="true" :autoplay="true" />
+            </div>
+            <h2 class="welcome-title">你好！我是智能助手</h2>
+            <p class="welcome-desc">输入问题，我会优先从知识库检索答案，未命中则用通用知识回答</p>
+            <div class="welcome-tags">
+              <el-tag type="info" size="small" effect="plain">健康咨询</el-tag>
+              <el-tag type="info" size="small" effect="plain">饮食建议</el-tag>
+              <el-tag type="info" size="small" effect="plain">疾病预防</el-tag>
+            </div>
           </div>
 
-          <div v-for="(msg, idx) in messages" :key="idx" :class="['message', msg.role]">
-            <div class="message-avatar">
-              <el-icon v-if="msg.role === 'user'" :size="28" color="#409eff"><User /></el-icon>
-              <el-icon v-else :size="28" color="#67c23a"><Service /></el-icon>
-            </div>
-            <div class="message-content">
-              <div class="message-role">{{ msg.role === 'user' ? '我' : 'AI 助手' }}</div>
-              <div v-if="msg.role === 'assistant' && msg.docBased !== undefined" class="source-tag">
-                <el-tag v-if="msg.docBased" type="success" size="small" effect="plain">
-                  <el-icon :size="12"><Document /></el-icon> 基于文档内容回答
-                </el-tag>
-                <el-tag v-else type="warning" size="small" effect="plain">
-                  <el-icon :size="12"><InfoFilled /></el-icon> 文档中未找到相关内容，以下为通用回答
-                </el-tag>
+          <div v-for="(msg, idx) in messages" :key="idx" :class="['message-wrapper', msg.role]">
+            <div :class="['message', msg.role]">
+              <div class="message-avatar">
+                <div v-if="msg.role === 'user'" class="avatar user-avatar">
+                <el-icon :size="24" color="#fff"><User /></el-icon>
               </div>
-              <div class="message-text" v-text="msg.content"></div>
+              <div v-else class="avatar ai-avatar">
+                <el-icon :size="24" color="#fff"><ChatDotRound /></el-icon>
+              </div>
+              </div>
+              <div class="message-body">
+                <div class="message-header">
+                  <span class="message-name">{{ msg.role === 'user' ? '我' : '智能助手' }}</span>
+                  <span v-if="msg.role === 'assistant' && msg.docBased !== undefined" :class="['doc-tag', msg.docBased ? 'doc-based' : 'not-doc-based']">
+                    {{ msg.docBased ? '基于文档' : '通用回答' }}
+                  </span>
+                </div>
+                <div class="message-content" v-text="msg.content"></div>
+              </div>
             </div>
           </div>
 
-          <div v-if="asking" class="message assistant">
-            <div class="message-avatar">
-              <el-icon :size="28" color="#67c23a"><Service /></el-icon>
-            </div>
-            <div class="message-content">
-              <div class="message-role">AI 助手</div>
-              <div class="typing-indicator"><span></span><span></span><span></span></div>
+          <!-- 打字状态 -->
+          <div v-if="asking" class="message-wrapper assistant">
+            <div class="message assistant">
+              <div class="message-avatar">
+                <div class="avatar ai-avatar">
+                <el-icon :size="24" color="#fff"><ChatDotRound /></el-icon>
+              </div>
+              </div>
+              <div class="message-body">
+                <div class="message-header">
+                  <span class="message-name">智能助手</span>
+                </div>
+                <div class="typing-container">
+                  <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <span class="typing-text">正在思考...</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- 输入区 -->
         <div class="input-area">
-          <el-input
-            v-model="question"
-            placeholder="输入任意健康相关问题，AI 为你解答"
-            @keyup.enter="handleAsk"
-            :disabled="asking"
-            class="question-input"
-          >
-            <template #suffix>
-              <el-button type="primary" :loading="asking" :disabled="!question.trim()" @click="handleAsk">
-                {{ asking ? '思考中...' : '发送' }}
-              </el-button>
-            </template>
-          </el-input>
+          <div class="input-wrapper">
+            <el-input
+              v-model="question"
+              placeholder="输入任意问题，AI 为你解答"
+              @keyup.enter="handleAsk"
+              :disabled="asking"
+              class="question-input"
+            />
+            <el-button 
+              type="primary" 
+              :loading="asking" 
+              :disabled="!question.trim()" 
+              @click="handleAsk"
+              class="send-btn"
+              :icon="Promotion"
+            >
+              {{ asking ? '思考中...' : '' }}
+            </el-button>
+          </div>
+          <p class="input-hint">按 Enter 键发送 | 支持健康咨询、饮食建议等问题</p>
         </div>
-      </el-card>
+      </div>
     </div>
   </div>
 </template>
@@ -98,7 +153,10 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ChatDotRound, ChatLineSquare, User, Service, Document, InfoFilled, Plus, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import { Vue3Lottie } from 'vue3-lottie'
+import { 
+  User, Plus, ArrowLeftBold, ArrowRightBold, Document, ChatDotRound, Promotion 
+} from '@element-plus/icons-vue'
 import { docAsk, listConversations, getConversation } from '@/api/user'
 
 const question = ref('')
@@ -108,7 +166,6 @@ const chatArea = ref(null)
 const sessionId = ref('')
 const showHistory = ref(true)
 
-// 历史会话
 const sessions = ref([])
 
 onMounted(async () => {
@@ -180,7 +237,6 @@ const handleAsk = async () => {
       content: res.answer || '未能获取回答',
       docBased: res.docBased
     })
-    // 刷新历史列表
     await loadSessions()
   } catch (error) {
     messages.value.push({ role: 'assistant', content: '问答请求失败：' + (error.response?.data?.error || error.message) })
@@ -196,21 +252,22 @@ const handleAsk = async () => {
   display: flex;
   height: calc(100vh - 140px);
   gap: 0;
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 /* 左侧历史面板 */
 .history-panel {
-  width: 240px;
-  min-width: 240px;
-  background: #fff;
-  border-radius: 12px 0 0 12px;
-  border: 1px solid var(--border);
-  border-right: none;
+  width: 280px;
+  min-width: 280px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
@@ -222,8 +279,36 @@ const handleAsk = async () => {
 }
 
 .history-header {
-  padding: 12px;
-  border-bottom: 1px solid #ebeef5;
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 12px;
+}
+
+.new-chat-btn {
+  width: 100%;
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: 500;
+  color: #fff !important;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%) !important;
+  border: none !important;
+}
+
+.new-chat-btn:hover {
+  background: linear-gradient(135deg, #3088e8 0%, #55a8f5 100%) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
 .history-list {
@@ -233,24 +318,53 @@ const handleAsk = async () => {
 }
 
 .history-item {
-  padding: 10px 12px;
-  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
   cursor: pointer;
-  margin-bottom: 4px;
-  transition: background 0.15s;
+  margin-bottom: 6px;
+  transition: all 0.2s ease;
+  background: #fff;
+  border: 1px solid transparent;
 }
 
 .history-item:hover {
-  background: #f0f2f5;
+  background: #fff;
+  border-color: #e2e8f0;
+  transform: translateX(4px);
 }
 
 .history-item.active {
-  background: #ecf5ff;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #3b82f6;
+}
+
+.history-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.history-item.active .history-icon {
+  background: #dbeafe;
+}
+
+.history-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .history-title {
   font-size: 13px;
-  color: #303133;
+  color: #1e293b;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -258,15 +372,21 @@ const handleAsk = async () => {
 
 .history-time {
   font-size: 11px;
-  color: #c0c4cc;
+  color: #94a3b8;
   margin-top: 4px;
 }
 
 .history-empty {
-  text-align: center;
-  color: #c0c4cc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+}
+
+.history-empty p {
+  margin-top: 12px;
   font-size: 13px;
-  padding: 24px 0;
 }
 
 /* 右侧问答区 */
@@ -275,126 +395,274 @@ const handleAsk = async () => {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background: #fff;
 }
 
 .toggle-bar {
-  padding: 4px 0 4px 4px;
+  padding: 6px 0 6px 6px;
+  background: #fff;
 }
 
-.qa-card {
-  flex: 1;
+.toggle-btn {
+  width: 28px;
+  height: 28px;
   display: flex;
-  flex-direction: column;
-  border-radius: 0 12px 12px 0;
-  border: 1px solid var(--border);
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #64748b;
 }
 
-.qa-card :deep(.el-card__body) {
+.toggle-btn:hover {
+  background: #f1f5f9;
+}
+
+.qa-container {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
-.card-header {
+/* 顶部标题栏 */
+.qa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+}
+
+.header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
-.card-title {
-  font-size: 16px;
+.avatar-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.header-info {
+  color: #fff;
+}
+
+.qa-title {
+  margin: 0;
+  font-size: 17px;
   font-weight: 600;
 }
 
-.card-subtitle {
-  font-size: 13px;
-  color: #909399;
-  margin-left: 12px;
+.qa-subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.header-actions .el-button {
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.header-actions .el-button:hover {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* 聊天区域 */
 .chat-area {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 0;
-  margin-bottom: 12px;
+  padding: 20px;
+  padding-bottom: 140px;
+  background: #f8fafc;
 }
 
-.chat-empty {
+/* 欢迎消息 */
+.welcome-section {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #c0c4cc;
+  height: 60%;
+  text-align: center;
 }
 
-.chat-empty p {
-  margin-top: 16px;
-  font-size: 14px;
-}
-
-/* 消息样式 */
-.message {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 0 4px;
-}
-
-.message.user { flex-direction: row-reverse; }
-
-.message-avatar {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+.welcome-avatar {
+  width: 160px;
+  height: 160px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f4ff 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: #f0f2f5;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(64, 158, 255, 0.15);
 }
 
-.message-role {
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 4px;
+.welcome-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px;
 }
 
-.source-tag { margin-bottom: 6px; }
-
-.message.user .message-role { text-align: right; }
-
-.message-text {
-  background: #f5f7fa;
-  padding: 12px 16px;
-  border-radius: 12px;
+.welcome-desc {
   font-size: 14px;
-  line-height: 1.6;
-  max-width: 70%;
+  color: #64748b;
+  margin: 0 0 20px;
+  max-width: 400px;
+}
+
+.welcome-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.welcome-tags .el-tag {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+/* 消息样式 */
+.message-wrapper {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.message-wrapper.user {
+  justify-content: flex-end;
+}
+
+.message-wrapper.user .message {
+  flex-direction: row-reverse;
+}
+
+.message {
+  display: flex;
+  gap: 12px;
+  max-width: 80%;
+}
+
+.message-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.message-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.doc-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.doc-tag.doc-based {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.doc-tag.not-doc-based {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.message-content {
+  background: #fff;
+  padding: 14px 18px;
+  border-radius: 0 16px 16px 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #334155;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.message.user .message-text {
-  background: #ecf5ff;
-  color: #303133;
+.message-wrapper.user .message-content {
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  color: #fff;
+  border-radius: 16px 0 16px 16px;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
-/* 打字动画 */
+.message-wrapper.user .message-name {
+  color: #409eff;
+}
+
+.message-avatar {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+}
+
+.ai-avatar {
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+}
+
+/* 打字状态 */
+.typing-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #fff;
+  border-radius: 0 16px 16px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
 .typing-indicator {
   display: flex;
-  gap: 5px;
-  padding: 12px 16px;
+  gap: 4px;
 }
 
 .typing-indicator span {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #909399;
-  animation: typing 1.4s infinite;
+  background: #94a3b8;
+  animation: typing 1.4s infinite ease-in-out;
 }
 
 .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
@@ -402,19 +670,106 @@ const handleAsk = async () => {
 
 @keyframes typing {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-6px); opacity: 1; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+.typing-text {
+  font-size: 13px;
+  color: #94a3b8;
 }
 
 /* 输入区 */
 .input-area {
-  border-top: 1px solid #ebeef5;
-  padding-top: 12px;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f5f9;
+  z-index: 100;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 24px;
+  padding: 6px 6px 6px 20px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: #409eff;
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
+
+.question-input {
+  flex: 1;
 }
 
 .question-input :deep(.el-input__wrapper) {
-  border-radius: 24px;
-  padding-right: 6px;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
-.question-input :deep(.el-input__suffix) { right: 4px; }
+.question-input :deep(.el-input__inner) {
+  font-size: 14px;
+  color: #334155;
+}
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border: none;
+}
+
+.send-btn:not(:disabled):hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4);
+}
+
+.send-btn:disabled {
+  opacity: 0.5;
+}
+
+.input-hint {
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 10px 0 0;
+}
+
+/* 滚动条样式 */
+.chat-area::-webkit-scrollbar,
+.history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-area::-webkit-scrollbar-track,
+.history-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-area::-webkit-scrollbar-thumb,
+.history-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.chat-area::-webkit-scrollbar-thumb:hover,
+.history-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 </style>

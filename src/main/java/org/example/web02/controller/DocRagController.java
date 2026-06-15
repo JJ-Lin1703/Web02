@@ -1,7 +1,9 @@
 package org.example.web02.controller;
 
 import org.example.web02.entity.AiConversation;
+import org.example.web02.entity.UploadTask;
 import org.example.web02.mapper.AiConversationMapper;
+import org.example.web02.mapper.UploadTaskMapper;
 import org.example.web02.service.VectorSearchService;
 import org.example.web02.service.DocumentQAService;
 import lombok.RequiredArgsConstructor;
@@ -9,13 +11,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 向量 RAG 控制器
- * 提供 TXT 文档上传 + 文档问答接口
+ * 提供 TXT 文档上传（异步 + DB 状态追踪 + 失败重试）+ 文档问答
  */
 @Slf4j
 @RestController
@@ -26,57 +34,140 @@ public class DocRagController {
     private final VectorSearchService vectorSearchService;
     private final DocumentQAService documentQAService;
     private final AiConversationMapper aiConversationMapper;
+    private final UploadTaskMapper uploadTaskMapper;
 
-    /** 文本最大长度（1MB，防止 OOM） */
-    private static final int MAX_TEXT_LENGTH = 1_000_000;
+    /** 异步任务线程池（IO 密集型，线程数不宜过多） */
+    private final ExecutorService taskExecutor = Executors.newFixedThreadPool(2);
 
     /**
-     * 上传 TXT 文档（Base64 编码）
+     * 上传 TXT 文档（异步处理，立即返回任务ID）
      */
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadFile(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file,
+                                        Authentication authentication) {
         try {
-            String fileName = body.get("fileName");
-            String fileContent = body.get("fileContent");
+            String fileName = file.getOriginalFilename();
 
             if (fileName == null || fileName.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "文件名不能为空"));
             }
-            if (fileContent == null || fileContent.isBlank()) {
+            if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "文件内容不能为空"));
             }
             if (!fileName.toLowerCase().endsWith(".txt")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "仅支持 TXT 文件"));
             }
 
-            byte[] fileBytes = java.util.Base64.getDecoder().decode(fileContent);
-            String text = new String(fileBytes, java.nio.charset.StandardCharsets.UTF_8);
-
-            if (text == null || text.isBlank()) {
-                throw new RuntimeException("文件内容为空，无法处理");
+            String text = new String(file.getBytes(), StandardCharsets.UTF_8);
+            if (text.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "文件内容为空，无法处理"));
             }
 
-            // 文本长度保护
-            if (text.length() > MAX_TEXT_LENGTH) {
-                text = text.substring(0, MAX_TEXT_LENGTH);
-            }
+            // 1) 创建 DB 任务记录（初始状态 PENDING）
+            Long userId = authentication != null ? (Long) authentication.getPrincipal() : null;
+            String taskId = "upload_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
 
-            String docId = vectorSearchService.indexText(text, fileName);
+            UploadTask task = UploadTask.builder()
+                    .taskId(taskId)
+                    .fileName(fileName)
+                    .textLength(text.length())
+                    .status("PENDING")
+                    .retryCount(0)
+                    .maxRetries(3)
+                    .userId(userId)
+                    .build();
+            uploadTaskMapper.insert(task);
+
+            // 2) 异步执行向量化入库
+            CompletableFuture.runAsync(() -> {
+                processUploadTask(taskId, text, fileName);
+            }, taskExecutor);
+
+            log.info("上传任务已提交：taskId={}, fileName={}, size={}", taskId, fileName, text.length());
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "docId", docId,
+                    "taskId", taskId,
                     "fileName", fileName,
                     "textLength", text.length(),
-                    "message", "TXT 上传并解析成功"
+                    "message", "文件已提交，正在解析中..."
             ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Base64 解码失败：" + e.getMessage()));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
+            log.error("上传请求异常", e);
             return ResponseEntity.internalServerError().body(Map.of("error", "上传失败：" + e.getMessage()));
         }
+    }
+
+    /**
+     * 异步执行上传任务（含失败重试）
+     */
+    private void processUploadTask(String taskId, String text, String fileName) {
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // 更新状态为 PROCESSING
+                UploadTask update = UploadTask.builder()
+                        .taskId(taskId)
+                        .status("PROCESSING")
+                        .build();
+                uploadTaskMapper.updateStatus(update);
+
+                // 执行向量化入库
+                String docId = vectorSearchService.indexText(text, fileName);
+
+                // 更新为 DONE
+                update = UploadTask.builder()
+                        .taskId(taskId)
+                        .status("DONE")
+                        .docId(docId)
+                        .build();
+                uploadTaskMapper.updateStatus(update);
+
+                log.info("上传任务完成：taskId={}, docId={}", taskId, docId);
+                return; // 成功，退出
+            } catch (Exception e) {
+                log.warn("上传任务第 {} 次失败：taskId={}, error={}",
+                        attempt, taskId, e.getMessage());
+
+                if (attempt < maxRetries) {
+                    // 指数退避：2s, 4s
+                    try {
+                        Thread.sleep(2000L * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                } else {
+                    // 最后一次失败，标记 FAILED
+                    UploadTask update = UploadTask.builder()
+                            .taskId(taskId)
+                            .status("FAILED")
+                            .errorMsg(e.getMessage() != null ? e.getMessage().substring(0, Math.min(e.getMessage().length(), 1000)) : "未知错误")
+                            .retryCount(attempt)
+                            .build();
+                    uploadTaskMapper.updateStatus(update);
+                    log.error("上传任务最终失败：taskId={}", taskId, e);
+                }
+            }
+        }
+    }
+
+    /**
+     * 查询上传任务状态（从 DB 读取）
+     */
+    @GetMapping("/upload/status/{taskId}")
+    public ResponseEntity<?> getUploadStatus(@PathVariable String taskId) {
+        UploadTask task = uploadTaskMapper.findByTaskId(taskId);
+        if (task == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Map.of(
+                "status", task.getStatus(),
+                "fileName", task.getFileName(),
+                "textLength", task.getTextLength(),
+                "docId", task.getDocId() != null ? task.getDocId() : "",
+                "error", task.getErrorMsg() != null ? task.getErrorMsg() : ""
+        ));
     }
 
     /**
@@ -140,7 +231,6 @@ public class DocRagController {
         try {
             Long userId = (Long) authentication.getPrincipal();
             List<AiConversation> sessions = aiConversationMapper.findSessionsByUserId(userId);
-            // 截断过长的首条问题
             sessions.forEach(s -> {
                 if (s.getQuestion() != null && s.getQuestion().length() > 30) {
                     s.setQuestion(s.getQuestion().substring(0, 30) + "...");

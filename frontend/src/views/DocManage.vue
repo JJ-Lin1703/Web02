@@ -34,13 +34,23 @@
           @click="handleUpload"
           class="upload-btn"
         >
-          {{ uploading ? '解析中...' : '上传并解析' }}
+          {{ uploading ? (uploadStatusText || '解析中...') : '上传并解析' }}
         </el-button>
       </div>
 
+      <!-- 上传加载动画 -->
+      <div v-if="uploading" class="loading-container">
+        <Vue3Lottie :animationLink="'/loading-animation.json'" :width="180" :height="180" />
+        <p class="loading-text">{{ uploadStatusText || '正在处理文档...' }}</p>
+        <div class="progress-wrapper">
+          <el-progress :percentage="uploadProgress" :stroke-width="6" />
+          <span class="progress-text">{{ uploadProgress }}%</span>
+        </div>
+      </div>
+
       <!-- 已上传文档列表 -->
-      <el-divider />
-      <div class="doc-list-header">
+      <el-divider v-if="!uploading" />
+      <div v-if="!uploading" class="doc-list-header">
         <h4>已上传文档</h4>
         <el-button @click="fetchDocs" :loading="loadingDocs">
           <el-icon :size="16"><Refresh /></el-icon>
@@ -48,9 +58,9 @@
         </el-button>
       </div>
 
-      <el-empty v-if="!loadingDocs && docs.length === 0" description="暂无已上传文档" />
+      <EmptyState v-if="!uploading && !loadingDocs && docs.length === 0" description="暂无已上传文档" />
 
-      <el-table v-else :data="docs" v-loading="loadingDocs" class="doc-table">
+      <el-table v-if="!uploading" :data="docs" v-loading="loadingDocs" class="doc-table">
         <el-table-column label="文档名称" min-width="300">
           <template #default="{ row }">
             <el-icon :size="16" color="#409eff"><Document /></el-icon>
@@ -63,20 +73,77 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload, UploadFilled, Refresh, Document } from '@element-plus/icons-vue'
-import { uploadPdfDoc, listDocRagDocs } from '@/api/user'
+import { Vue3Lottie } from 'vue3-lottie'
+import { uploadPdfDoc, listDocRagDocs, getUploadStatus } from '@/api/user'
+import EmptyState from '@/components/EmptyState.vue'
 
 const uploadRef = ref(null)
 const fileList = ref([])
 const selectedFile = ref(null)
 const uploading = ref(false)
+const uploadStatusText = ref('')
+const uploadProgress = ref(0)
 const docs = ref([])
 const loadingDocs = ref(false)
+let pollTimer = null
+let pollCount = 0
+
+// 页面加载时自动获取文档列表
+onMounted(() => {
+  fetchDocs()
+})
 
 const handleFileChange = (file) => {
   selectedFile.value = file.raw
+}
+
+const startPollStatus = (taskId) => {
+  uploadStatusText.value = '正在向量化入库...'
+  uploadProgress.value = 30
+  pollCount = 0
+  pollTimer = setInterval(async () => {
+    pollCount++
+    try {
+      const res = await getUploadStatus(taskId)
+      const status = res.status
+      
+      // 更新进度
+      if (res.progress) {
+        uploadProgress.value = res.progress
+      } else {
+        // 模拟进度：30% -> 90% 逐渐增加
+        uploadProgress.value = Math.min(90, 30 + pollCount * 10)
+      }
+      
+      if (status === 'DONE') {
+        clearInterval(pollTimer)
+        pollTimer = null
+        uploadProgress.value = 100
+        uploading.value = false
+        uploadStatusText.value = ''
+        ElMessage.success('文件解析完成')
+        fileList.value = []
+        selectedFile.value = null
+        await fetchDocs()
+      } else if (status === 'FAILED') {
+        clearInterval(pollTimer)
+        pollTimer = null
+        uploading.value = false
+        uploadStatusText.value = ''
+        uploadProgress.value = 0
+        ElMessage.error(res.error || '文件解析失败')
+        fileList.value = []
+        selectedFile.value = null
+      } else if (status === 'PROCESSING') {
+        uploadStatusText.value = '正在向量化入库...'
+      }
+    } catch (e) {
+      // 轮询出错忽略，继续等
+    }
+  }, 3000)
 }
 
 const handleUpload = async () => {
@@ -86,21 +153,35 @@ const handleUpload = async () => {
   }
 
   uploading.value = true
+  uploadStatusText.value = '正在上传文件...'
+  uploadProgress.value = 10
   try {
     const res = await uploadPdfDoc(selectedFile.value)
-    ElMessage.success(res.data.message || 'PDF 上传并解析成功')
-    fileList.value = []
-    selectedFile.value = null
-    await fetchDocs()
+    const data = res.data || res
+    if (data.taskId) {
+      uploadStatusText.value = '文件上传完成，正在解析中...'
+      uploadProgress.value = 25
+      startPollStatus(data.taskId)
+    } else {
+      // 兼容旧版同步响应
+      ElMessage.success(data.message || 'TXT 上传并解析成功')
+      fileList.value = []
+      selectedFile.value = null
+      uploading.value = false
+      uploadStatusText.value = ''
+      uploadProgress.value = 0
+      await fetchDocs()
+    }
   } catch (error) {
-    console.error('上传失败详情:', error)
-    const errMsg = error.response?.data?.error 
+    console.error('上传失败:', error)
+    const errMsg = error.response?.data?.error
       || error.response?.data?.message
-      || error.message 
+      || error.message
       || '上传失败'
     ElMessage.error(errMsg)
-  } finally {
     uploading.value = false
+    uploadStatusText.value = ''
+    uploadProgress.value = 0
   }
 }
 
@@ -115,6 +196,10 @@ const fetchDocs = async () => {
     loadingDocs.value = false
   }
 }
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer)
+})
 </script>
 
 <style scoped>
@@ -162,6 +247,34 @@ const fetchDocs = async () => {
 
 .upload-btn {
   width: 200px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.loading-text {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.progress-wrapper {
+  width: 300px;
+  margin-top: 16px;
+  position: relative;
+}
+
+.progress-text {
+  position: absolute;
+  right: 0;
+  top: -24px;
+  font-size: 12px;
+  color: #909399;
 }
 
 .doc-list-header {

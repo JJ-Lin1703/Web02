@@ -44,8 +44,8 @@
       </el-table-column>
     </el-table>
 
-    <el-empty v-if="!loading && dictList.length === 0" description="暂无标签" />
-    <el-empty v-if="!loading && dictList.length > 0 && filteredList.length === 0" description="该分类暂无标签" />
+    <EmptyState v-if="!loading && dictList.length === 0" description="暂无标签" />
+    <EmptyState v-if="!loading && dictList.length > 0 && filteredList.length === 0" description="该分类暂无标签" />
   </el-card>
 
   <!-- 新增 / 编辑对话框 -->
@@ -95,6 +95,7 @@ import {
   updateDictLabel,
   deleteDictLabel
 } from '@/api/user'
+import EmptyState from '@/components/EmptyState.vue'
 
 const typeNameMap = {
   health_target: '健康目标',

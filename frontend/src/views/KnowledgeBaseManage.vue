@@ -40,7 +40,7 @@
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="!loading && knowledgeList.length === 0" description="暂无知识条目" />
+      <EmptyState v-if="!loading && knowledgeList.length === 0" description="暂无知识条目" />
     </el-card>
 
     <!-- 新增 / 编辑对话框 -->
@@ -110,6 +110,7 @@ import {
   deleteKnowledge,
   getValidTags
 } from '@/api/user'
+import EmptyState from '@/components/EmptyState.vue'
 
 const loading = ref(false)
 const submitting = ref(false)

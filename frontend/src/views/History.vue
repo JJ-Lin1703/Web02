@@ -100,23 +100,44 @@
               </div>
             </div>
           </template>
-          <el-table :data="aiPlanHistory" stripe v-loading="aiPlanLoading" empty-text="暂无AI计划记录">
-            <el-table-column prop="planTitle" label="计划标题" width="200" />
-            <el-table-column prop="versionNo" label="版本" width="80" />
-            <el-table-column prop="totalCalorie" label="每日热量(kcal)" width="120" />
-            <el-table-column prop="generateTime" label="生成时间" width="200">
-              <template #default="{ row }">
-                {{ formatDateTime(row.generateTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="150">
-              <template #default="{ row }">
-                <el-button link @click="showPlanDetail(row)">查看</el-button>
-                <el-button type="danger" link @click="handleDeletePlan(row.id)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          
+
+          <div v-loading="aiPlanLoading" class="plan-cards-wrapper">
+            <EmptyState v-if="!aiPlanLoading && aiPlanHistory.length === 0" description="暂无AI计划记录" />
+            <div v-else class="plan-cards-grid">
+              <div v-for="item in aiPlanHistory" :key="item.id" class="plan-card-item">
+                <div class="plan-card-header">
+                  <div class="plan-card-icon">
+                    <el-icon :size="24" color="#fff"><Document /></el-icon>
+                  </div>
+                  <div class="plan-card-title-wrap">
+                    <div class="plan-card-title">{{ item.planTitle }}</div>
+                    <div class="plan-card-version">版本 V{{ item.versionNo }}</div>
+                  </div>
+                </div>
+                <div class="plan-card-body">
+                  <div class="plan-info-row">
+                    <span class="info-label">每日热量</span>
+                    <span class="info-value calorie-value">{{ item.totalCalorie }} <small>kcal</small></span>
+                  </div>
+                  <div class="plan-info-row">
+                    <span class="info-label">生成时间</span>
+                    <span class="info-value">{{ formatDateTime(item.generateTime) }}</span>
+                  </div>
+                </div>
+                <div class="plan-card-footer">
+                  <el-button class="plan-btn plan-btn-primary" @click="showPlanDetail(item)">
+                    <el-icon :size="14"><View /></el-icon>
+                    <span>查看详情</span>
+                  </el-button>
+                  <el-button class="plan-btn plan-btn-danger" @click="handleDeletePlan(item.id)">
+                    <el-icon :size="14"><Delete /></el-icon>
+                    <span>删除</span>
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="pagination-container">
             <el-pagination
               v-model:current-page="aiPlanPagination.pageNum"
@@ -134,22 +155,33 @@
       <el-tab-pane label="签到记录" name="checkin">
         <el-card>
           <template #header>
-<span class="card-title">签到历史</span>
+            <span class="card-title">签到历史</span>
           </template>
-          <el-table :data="checkinHistory" stripe v-loading="checkinLoading" empty-text="暂无签到记录">
-            <el-table-column prop="checkinDate" label="签到日期" width="150">
-              <template #default="{ row }">
-                {{ formatDate(row.checkinDate) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="checkinTime" label="签到时间" width="180">
-              <template #default="{ row }">
-                {{ formatTime(row.checkinTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="continuousDays" label="连续签到天数" width="150" />
-          </el-table>
-          
+
+          <div v-loading="checkinLoading" class="checkin-cards-wrapper">
+            <EmptyState v-if="!checkinLoading && checkinHistory.length === 0" description="暂无签到记录" />
+            <div v-else class="checkin-timeline">
+              <div v-for="item in checkinHistory" :key="item.id" class="checkin-item">
+                <div class="checkin-dot">
+                  <el-icon :size="14" color="#fff"><Check /></el-icon>
+                </div>
+                <div class="checkin-card">
+                  <div class="checkin-card-top">
+                    <div class="checkin-date">{{ formatDate(item.checkinDate) }}</div>
+                    <div class="checkin-time">{{ formatTime(item.checkinTime) }}</div>
+                  </div>
+                  <div class="checkin-card-bottom">
+                    <div class="checkin-streak">
+                      <el-icon :size="16" color="#f56c6c"><Sunny /></el-icon>
+                      <span class="streak-number">{{ item.continuousDays }}</span>
+                      <span class="streak-label">连续签到</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="pagination-container">
             <el-pagination
               v-model:current-page="checkinPagination.pageNum"
@@ -191,7 +223,48 @@
           </div>
         </div>
         <div class="plan-content">
-          <pre>{{ formatPlanContent(selectedPlan?.planContent) }}</pre>
+          <div v-if="planDetailText" class="plan-detail-text">
+            <!-- 总结区域 -->
+            <div v-if="planDetailText.summary" class="detail-summary">
+              <div v-if="planDetailText.summary.diet && planDetailText.summary.diet.length" class="summary-block">
+                <h3 class="summary-title">饮食建议</h3>
+                <ul class="summary-list">
+                  <li v-for="(item, i) in planDetailText.summary.diet" :key="'d'+i">{{ item }}</li>
+                </ul>
+              </div>
+              <div v-if="planDetailText.summary.exercise && planDetailText.summary.exercise.length" class="summary-block">
+                <h3 class="summary-title">运动建议</h3>
+                <ul class="summary-list">
+                  <li v-for="(item, i) in planDetailText.summary.exercise" :key="'e'+i">{{ item }}</li>
+                </ul>
+              </div>
+              <div v-if="planDetailText.summary.tips && planDetailText.summary.tips.length" class="summary-block">
+                <h3 class="summary-title">健康提示</h3>
+                <ul class="summary-list">
+                  <li v-for="(item, i) in planDetailText.summary.tips" :key="'t'+i">{{ item }}</li>
+                </ul>
+              </div>
+            </div>
+            <!-- 每日计划 -->
+            <h2 class="detail-section-title">一周详细计划</h2>
+            <div v-for="(day, dIdx) in planDetailText.days" :key="dIdx" class="detail-day">
+              <h3 class="detail-day-title">{{ day.dayName }}</h3>
+              <div class="detail-section">
+                <h4>饮食安排</h4>
+                <div v-for="(meal, mIdx) in day.diet" :key="mIdx" class="detail-item">
+                  <span class="detail-label">{{ meal.type }}</span>
+                  <span class="detail-value">{{ meal.name }}（{{ meal.calorie }}）</span>
+                </div>
+              </div>
+              <div class="detail-section">
+                <h4>运动安排</h4>
+                <div v-for="(ex, eIdx) in day.exercise" :key="eIdx" class="detail-item">
+                  <span class="detail-value">{{ ex.name }}：{{ ex.duration }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <pre v-else>{{ formatPlanContent(selectedPlan?.planContent) }}</pre>
         </div>
       </div>
       <template #footer>
@@ -202,9 +275,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Document, View, Delete, Check, Sunny } from '@element-plus/icons-vue'
 import { getCheckinHistory, getWeightHistory, recordWeight, deleteWeightRecord, updateWeightRecord, getAiPlanHistory, deleteAiPlan } from '@/api/user'
+import EmptyState from '@/components/EmptyState.vue'
 
 const activeTab = ref('weight')
 
@@ -425,6 +500,31 @@ const formatPlanContent = (content) => {
     return content;
   }
 }
+
+const planDetailText = computed(() => {
+  if (!selectedPlan.value?.planContent) return null
+  try {
+    const obj = JSON.parse(selectedPlan.value.planContent)
+    if (!obj.weeklyPlan || !Array.isArray(obj.weeklyPlan)) return null
+    return {
+      summary: obj.summary || null,
+      days: obj.weeklyPlan.map(day => ({
+        dayName: day.dayName || '',
+        diet: (day.diet || []).map(m => ({
+          type: m.type || '',
+          name: m.name || '',
+          calorie: m.calorie || ''
+        })),
+        exercise: (day.exercise || []).map(e => ({
+          name: e.name || '',
+          duration: e.duration || ''
+        }))
+      }))
+    }
+  } catch {
+    return null
+  }
+})
 onMounted(() => {
   fetchWeightHistory()
 })
@@ -500,5 +600,363 @@ onMounted(() => {
   font-size: 18px;
   line-height: 1.8;
   color: #303133;
+}
+
+.plan-detail-text {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.detail-day {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-day:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.detail-day-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #409eff;
+  font-weight: 600;
+}
+
+.detail-section {
+  margin-bottom: 10px;
+}
+
+.detail-section h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: #606266;
+  font-weight: 600;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  margin-bottom: 3px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.detail-label {
+  display: inline-block;
+  min-width: 44px;
+  padding: 2px 8px;
+  background: #ecf5ff;
+  color: #409eff;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 10px;
+  text-align: center;
+}
+
+.detail-value {
+  color: #303133;
+  line-height: 1.5;
+}
+
+.detail-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f0f9ff;
+  border-radius: 10px;
+  border: 1px solid #d0e8ff;
+}
+
+.summary-block {
+  flex: 1;
+  min-width: 180px;
+}
+
+.summary-title {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #409eff;
+  font-weight: 600;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #b3d8ff;
+}
+
+.summary-list {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.summary-list li {
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.detail-section-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #303133;
+  font-weight: 700;
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+/* ============ AI计划历史卡片样式 ============ */
+.plan-cards-wrapper {
+  min-height: 200px;
+  padding: 4px 0;
+}
+
+.plan-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.plan-card-item {
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  padding: 16px;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-card-item:hover {
+  border-color: #409eff;
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.plan-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #ebeef5;
+}
+
+.plan-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.plan-card-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-card-version {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 2px;
+}
+
+.plan-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.info-label {
+  color: #909399;
+}
+
+.info-value {
+  color: #303133;
+  font-weight: 500;
+}
+
+.calorie-value {
+  color: #f56c6c;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.calorie-value small {
+  font-size: 11px;
+  font-weight: normal;
+  color: #909399;
+}
+
+.plan-card-footer {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 8px;
+  border-top: 1px solid #f5f7fa;
+}
+
+.plan-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.plan-btn-primary {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.plan-btn-primary:hover {
+  background: #409eff;
+  color: #fff;
+}
+
+.plan-btn-danger {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+.plan-btn-danger:hover {
+  background: #f56c6c;
+  color: #fff;
+}
+
+/* ============ 签到记录时间轴样式 ============ */
+.checkin-cards-wrapper {
+  min-height: 200px;
+  padding: 8px 0;
+}
+
+.checkin-timeline {
+  position: relative;
+  padding-left: 8px;
+}
+
+.checkin-timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: linear-gradient(180deg, #67c23a 0%, #e1f3d8 100%);
+}
+
+.checkin-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.checkin-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
+}
+
+.checkin-card {
+  flex: 1;
+  background: #fafbfc;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.25s ease;
+}
+
+.checkin-card:hover {
+  background: #f0f9eb;
+  border-color: #67c23a;
+  transform: translateX(4px);
+}
+
+.checkin-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkin-date {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.checkin-time {
+  font-size: 12px;
+  color: #909399;
+}
+
+.checkin-card-bottom {
+  display: flex;
+  align-items: center;
+}
+
+.checkin-streak {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #fde2e2;
+}
+
+.streak-number {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f56c6c;
+}
+
+.streak-label {
+  font-size: 12px;
+  color: #909399;
 }
 </style>

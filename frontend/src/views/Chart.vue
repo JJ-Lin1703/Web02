@@ -32,7 +32,8 @@
                 </div>
               </div>
             </template>
-            <div ref="weightChartRef" class="chart-container" v-loading="weightLoading"></div>
+            <div v-show="!weightEmpty" ref="weightChartRef" class="chart-container" v-loading="weightLoading"></div>
+            <EmptyState v-if="weightEmpty" description="暂无体重数据" />
           </el-card>
         </div>
         
@@ -44,7 +45,8 @@
                 <span>周打卡完成率</span>
               </div>
             </template>
-            <div ref="completionChartRef" class="chart-container" v-loading="completionLoading"></div>
+            <div v-show="!completionEmpty" ref="completionChartRef" class="chart-container" v-loading="completionLoading"></div>
+            <EmptyState v-if="completionEmpty" description="暂无打卡数据" />
           </el-card>
         </div>
         
@@ -92,6 +94,7 @@
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import { getWeightHistory, getWeeklyStats } from '@/api/user'
+import EmptyState from '@/components/EmptyState.vue'
 
 const currentIndex = ref(0)
 const filterType = ref('7days')
@@ -104,6 +107,10 @@ const calorieChartRef = ref(null)
 const weightLoading = ref(false)
 const completionLoading = ref(false)
 const calorieLoading = ref(false)
+
+const weightEmpty = ref(false)
+const completionEmpty = ref(false)
+const calorieEmpty = ref(false)
 
 let weightChartInstance = null
 let completionChartInstance = null
@@ -148,6 +155,7 @@ const getDateRange = () => {
 
 const fetchWeightData = async () => {
   weightLoading.value = true
+  weightEmpty.value = false
   try {
     const { startDate } = getDateRange()
     const params = { sortBy: 'recordDate' }
@@ -159,7 +167,9 @@ const fetchWeightData = async () => {
     await nextTick()
     
     if (data.length === 0) {
-      weightChartInstance = renderEmptyChart(weightChartRef.value, '暂无体重数据', weightChartInstance)
+      disposeChart(weightChartInstance)
+      weightChartInstance = null
+      weightEmpty.value = true
     } else {
       if (weightChartInstance) {
         weightChartInstance.dispose()
@@ -168,7 +178,9 @@ const fetchWeightData = async () => {
       renderWeightChart(data)
     }
   } catch {
-    weightChartInstance = renderEmptyChart(weightChartRef.value, '暂无体重数据', weightChartInstance)
+    disposeChart(weightChartInstance)
+    weightChartInstance = null
+    weightEmpty.value = true
   } finally {
     weightLoading.value = false
   }
@@ -176,6 +188,7 @@ const fetchWeightData = async () => {
 
 const fetchCompletionData = async () => {
   completionLoading.value = true
+  completionEmpty.value = false
   try {
     const res = await getWeeklyStats()
     const data = res.data || {}
@@ -184,7 +197,9 @@ const fetchCompletionData = async () => {
     await nextTick()
     
     if (weekRecords.length === 0) {
-      completionChartInstance = renderEmptyChart(completionChartRef.value, '暂无打卡数据', completionChartInstance)
+      disposeChart(completionChartInstance)
+      completionChartInstance = null
+      completionEmpty.value = true
     } else {
       if (completionChartInstance) {
         completionChartInstance.dispose()
@@ -193,7 +208,9 @@ const fetchCompletionData = async () => {
       renderCompletionChart(weekRecords)
     }
   } catch {
-    completionChartInstance = renderEmptyChart(completionChartRef.value, '暂无打卡数据', completionChartInstance)
+    disposeChart(completionChartInstance)
+    completionChartInstance = null
+    completionEmpty.value = true
   } finally {
     completionLoading.value = false
   }
@@ -356,26 +373,10 @@ const renderCalorieChart = (data) => {
   calorieChartInstance.setOption(option)
 }
 
-const renderEmptyChart = (el, text, chartInstance) => {
-  if (!el) return
-  
+const disposeChart = (chartInstance) => {
   if (chartInstance) {
     chartInstance.dispose()
   }
-  
-  const instance = echarts.init(el)
-  instance.setOption({
-    title: {
-      text: text,
-      left: 'center',
-      top: 'center',
-      textStyle: { color: '#909399', fontSize: 14 }
-    },
-    xAxis: { show: false },
-    yAxis: { show: false }
-  })
-  
-  return instance
 }
 
 const handleResize = () => {

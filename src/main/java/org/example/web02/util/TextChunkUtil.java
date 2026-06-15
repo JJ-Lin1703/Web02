@@ -12,11 +12,11 @@ import java.util.List;
 @Slf4j
 public class TextChunkUtil {
 
-    /** 每块最大字符数 */
-    private static final int CHUNK_SIZE = 500;
+    /** 每块最大字符数（1200字符/块，块数减少约60%） */
+    private static final int CHUNK_SIZE = 1200;
 
     /** 块间重叠字符数 */
-    private static final int OVERLAP = 50;
+    private static final int OVERLAP = 120;
 
     /**
      * 将文本切分为多个块

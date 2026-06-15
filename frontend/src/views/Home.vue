@@ -83,7 +83,7 @@
             </div>
             
             <div v-else-if="!dailyTasks.length" class="empty-container">
-              <el-empty description="暂无打卡任务，请先生成AI计划" :image-size="60" />
+              <EmptyState description="暂无打卡任务，请先生成AI计划" />
             </div>
             
             <div v-else class="tasks-container">
@@ -191,7 +191,7 @@
                 <span>{{ item }}</span>
               </div>
             </div>
-            <el-empty v-else description="暂无建议，请先生成AI计划" :image-size="60" />
+            <EmptyState v-else description="暂无建议，请先生成AI计划" />
           </el-card>
         </div>
       </el-col>
@@ -207,7 +207,7 @@
                 <span>{{ item }}</span>
               </div>
             </div>
-            <el-empty v-else description="暂无建议，请先生成AI计划" :image-size="60" />
+            <EmptyState v-else description="暂无建议，请先生成AI计划" />
           </el-card>
         </div>
       </el-col>
@@ -223,7 +223,7 @@
               <span>{{ item }}</span>
             </div>
           </div>
-          <el-empty v-else description="暂无提示，请先生成AI计划" :image-size="60" />
+          <EmptyState v-else description="暂无提示，请先生成AI计划" />
           </el-card>
         </div>
       </el-col>
@@ -303,6 +303,7 @@ import { ElMessage } from 'element-plus';
 import { TrendCharts, ScaleToOriginal, CircleCheck, Check, Lightning, DataAnalysis, ArrowDown, ArrowUp, Minus, Loading, Bowl, MoreFilled, FirstAidKit, Edit } from '@element-plus/icons-vue';
 import * as echarts from 'echarts';
 import { getHealthRecord, getLatestAiPlan, saveClockRecord, getTodayClockRecord, getWeeklyStats } from '@/api/user';
+import EmptyState from '@/components/EmptyState.vue';
 
 const router = useRouter();
 
