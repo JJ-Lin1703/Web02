@@ -46,4 +46,19 @@
         ORDER BY create_time DESC
     </select>
 
+    <!-- 根据会话ID软删除会话记录 -->
+    <update id="deleteBySessionId">
+        UPDATE ai_conversation
+        SET is_deleted = 1
+        WHERE session_id = #{sessionId} AND user_id = #{userId} AND is_deleted = 0
+    </update>
+
+    <!-- 查询会话最近 N 条对话记录（用于对话记忆） -->
+    <select id="findRecentBySessionId" resultMap="BaseResultMap">
+        SELECT * FROM ai_conversation
+        WHERE session_id = #{sessionId} AND is_deleted = 0
+        ORDER BY create_time ASC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

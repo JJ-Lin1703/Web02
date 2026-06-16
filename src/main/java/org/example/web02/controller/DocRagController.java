@@ -219,8 +219,8 @@ public class DocRagController {
         String sessionId = body.getOrDefault("sessionId", "");
 
         try {
-            // 调用文档问答服务
-            Map<String, Object> result = documentQAService.ask(question);
+            // 调用文档问答服务（传入sessionId以支持对话记忆）
+            Map<String, Object> result = documentQAService.ask(question, sessionId);
 
             // 保存对话记录
             if (userId != null && !sessionId.isBlank()) {
@@ -298,6 +298,26 @@ public class DocRagController {
             // 查询会话的消息列表
             List<AiConversation> messages = aiConversationMapper.findBySessionId(sessionId);
             return ResponseEntity.ok(Map.of("messages", messages));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 删除指定会话
+     *
+     * @param sessionId 会话 ID
+     * @param authentication 认证信息，用于获取当前用户 ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/conversations/{sessionId}")
+    public ResponseEntity<?> deleteConversation(@PathVariable String sessionId, Authentication authentication) {
+        try {
+            // 从认证信息中获取用户 ID
+            Long userId = (Long) authentication.getPrincipal();
+            // 删除会话
+            aiConversationMapper.deleteBySessionId(sessionId, userId);
+            return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }

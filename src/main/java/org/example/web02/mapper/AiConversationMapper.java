@@ -46,4 +46,22 @@ public interface AiConversationMapper {
      * @return 会话记录列表
      */
     List<AiConversation> findSessionsByUserId(@Param("userId") Long userId);
+
+    /**
+     * 根据会话 ID 删除会话（软删除）
+     *
+     * @param sessionId 会话 ID
+     * @param userId 用户 ID（防止跨用户删除）
+     * @return 影响行数
+     */
+    int deleteBySessionId(@Param("sessionId") String sessionId, @Param("userId") Long userId);
+
+    /**
+     * 根据会话 ID 查询最近 N 条对话记录（用于对话记忆）
+     *
+     * @param sessionId 会话 ID
+     * @param limit 返回记录数
+     * @return 最近的对话记录列表（按时间升序）
+     */
+    List<AiConversation> findRecentBySessionId(@Param("sessionId") String sessionId, @Param("limit") int limit);
 }

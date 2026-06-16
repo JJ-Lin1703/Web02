@@ -700,3 +700,15 @@ export const getConversation = (sessionId) => {
     method: 'get'
   })
 }
+
+/**
+ * 删除指定会话
+ * @param {string} sessionId - 会话ID
+ * @returns {Promise} 删除结果
+ */
+export const deleteConversation = (sessionId) => {
+  return request({
+    url: `/doc-rag/conversations/${sessionId}`,
+    method: 'delete'
+  })
+}

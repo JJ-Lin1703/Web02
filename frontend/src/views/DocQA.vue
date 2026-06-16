@@ -26,6 +26,16 @@
             <div class="history-title">{{ s.question || '新对话' }}</div>
             <div class="history-time">{{ formatTime(s.createTime) }}</div>
           </div>
+          <div class="history-actions" @click.stop>
+            <el-button 
+              type="danger" 
+              size="small" 
+              :icon="Delete" 
+              circle 
+              @click="handleDeleteSession(s.sessionId)"
+              class="delete-btn"
+            />
+          </div>
         </div>
         <div v-if="sessions.length === 0" class="history-empty">
           <el-icon :size="32" color="#d9d9d9"><Document /></el-icon>
@@ -42,24 +52,6 @@
       </div>
 
       <div class="qa-container">
-        <!-- 顶部标题栏 -->
-        <div class="qa-header">
-          <div class="header-left">
-            <div class="avatar-wrapper">
-              <el-icon :size="28" color="#fff"><ChatDotRound /></el-icon>
-            </div>
-            <div class="header-info">
-              <h3 class="qa-title">智能助手</h3>
-              <p class="qa-subtitle">优先基于知识库回答，未命中则用通用知识</p>
-            </div>
-          </div>
-          <div class="header-actions">
-            <el-button text size="small" @click="newChat">
-              新对话
-            </el-button>
-          </div>
-        </div>
-
         <!-- 聊天消息区 -->
         <div class="chat-area" ref="chatArea">
           <!-- 欢迎消息 -->
@@ -162,9 +154,9 @@ import { ref, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Vue3Lottie } from 'vue3-lottie'
 import { 
-  User, Plus, ArrowLeftBold, ArrowRightBold, Document, ChatDotRound, Promotion 
+  User, Plus, ArrowLeftBold, ArrowRightBold, Document, ChatDotRound, Promotion, Delete 
 } from '@element-plus/icons-vue'
-import { docAsk, listConversations, getConversation } from '@/api/user'
+import { docAsk, listConversations, getConversation, deleteConversation } from '@/api/user'
 
 /** 用户输入的问题 */
 const question = ref('')
@@ -257,6 +249,27 @@ const loadSession = async (sid) => {
   } catch (e) {
     // 加载失败时显示错误提示
     ElMessage.error('加载对话失败')
+  }
+}
+
+/**
+ * 删除指定会话
+ * 从历史列表中删除指定会话，并从后端同步删除
+ * @param {string} sid - 会话ID
+ */
+const handleDeleteSession = async (sid) => {
+  try {
+    // 调用API删除会话
+    await deleteConversation(sid)
+    // 从本地会话列表中移除
+    sessions.value = sessions.value.filter(s => s.sessionId !== sid)
+    // 如果删除的是当前会话，则创建新对话
+    if (sessionId.value === sid) {
+      newChat()
+    }
+    ElMessage.success('会话已删除')
+  } catch (e) {
+    ElMessage.error('删除会话失败')
   }
 }
 
@@ -469,6 +482,24 @@ const handleAsk = async () => {
   margin-top: 4px;
 }
 
+.history-actions {
+  display: none;
+  flex-shrink: 0;
+}
+
+.history-item:hover .history-actions {
+  display: flex;
+  align-items: center;
+}
+
+.delete-btn {
+  opacity: 0.6;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+}
+
 .history-empty {
   display: flex;
   flex-direction: column;
@@ -516,66 +547,6 @@ const handleAsk = async () => {
   flex-direction: column;
   overflow: hidden;
   position: relative;
-}
-
-/* 顶部标题栏 */
-.qa-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f1f5f9;
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.avatar-wrapper {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-}
-
-.header-info {
-  color: #fff;
-}
-
-.qa-title {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.qa-subtitle {
-  margin: 4px 0 0;
-  font-size: 12px;
-  opacity: 0.85;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.header-actions .el-button {
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.header-actions .el-button:hover {
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
-  background: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* 聊天区域 */
