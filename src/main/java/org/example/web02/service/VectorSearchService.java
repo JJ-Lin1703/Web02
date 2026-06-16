@@ -126,14 +126,16 @@ public class VectorSearchService {
             allChunks = documentChunkMapper.findAll();
             if (!allChunks.isEmpty()) {
                 embeddingCache.putDocumentChunks(allChunks);
-                log.debug("文档块缓存已更新：{} 个块", allChunks.size());
+                //将日志的中文改成英文
+                log.debug("DocumentSearchService.search:documentChunks.size={}", allChunks.size());
             }
         } else {
-            log.debug("文档块缓存命中：{} 个块", allChunks.size());
+            log.debug("DocumentSearchService.search:documentChunks.size={}", allChunks.size());
         }
 
         if (allChunks.isEmpty()) {
-            log.warn("知识库为空，无可检索内容");
+            //将日志的中文改成英文
+            log.warn("no document chunks available, cannot search");
             return Collections.emptyList();
         }
 

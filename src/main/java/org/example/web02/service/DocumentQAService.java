@@ -61,7 +61,7 @@ public class DocumentQAService {
 
         // Step 3: 调用大模型生成回答
         String response = dashScopeService.generateText(prompt.toString());
-        log.info("文档问答完成（docBased={}）：问题={}... → 回答={}...",
+        log.info("DocumentQAService.ask（docBased={}）：question={}... → answer={}...",
                 docBased,
                 question.substring(0, Math.min(30, question.length())),
                 response.substring(0, Math.min(50, response.length())));
